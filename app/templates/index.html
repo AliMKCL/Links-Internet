@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reddit Gaming Advisor</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #43cea2 0%, #185a9d 100%);
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #222;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+            padding: 2rem 2.5rem 2.5rem 2.5rem;
+            margin-top: 4rem;
+            width: 100%;
+            max-width: 800px;
+            /* Increased from 500px to accommodate post content */
+        }
+
+        h1 {
+            text-align: center;
+            color: #185a9d;
+            margin-bottom: 1.5rem;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid #43cea2;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        input[type="text"]:focus {
+            border: 1.5px solid #185a9d;
+        }
+
+        button {
+            background: linear-gradient(90deg, #43cea2 0%, #185a9d 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 2rem;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-bottom: 1rem;
+        }
+
+        button:hover {
+            background: linear-gradient(90deg, #185a9d 0%, #43cea2 100%);
+        }
+
+        #output {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #f0f8ff;
+            border-radius: 10px;
+            min-height: 60px;
+            box-shadow: 0 2px 8px rgba(24, 90, 157, 0.08);
+            color: #185a9d;
+            font-size: 1.05rem;
+            white-space: pre-line;
+        }
+
+        /* Styling for tables in post content */
+        #output table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 15px 0;
+            font-size: 0.9em;
+            table-layout: auto;
+        }
+
+        #output table,
+        #output th,
+        #output td {
+            border: 1px solid #ccc;
+        }
+
+        #output th,
+        #output td {
+            padding: 8px;
+            text-align: left;
+            vertical-align: top;
+            word-wrap: break-word;
+            max-width: 300px;
+        }
+
+        #output th {
+            background-color: #f2f2f2;
+            color: #185a9d;
+            font-weight: bold;
+        }
+
+        #output tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        #output tr:hover {
+            background-color: #f0f8ff;
+        }
+
+        #output strong {
+            color: #185a9d;
+        }
+
+        #output pre {
+            background: #f5f5f5;
+            border-left: 3px solid #185a9d;
+            padding: 10px;
+            overflow-x: auto;
+            font-family: monospace;
+        }
+
+        #output h2,
+        #output h3,
+        #output h4 {
+            color: #185a9d;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            margin-bottom: 15px;
+        }
+
+        .post-content {
+            line-height: 1.5;
+        }
+
+        .post-content h2 {
+            font-size: 1.5em;
+        }
+
+        .post-content h3 {
+            font-size: 1.3em;
+        }
+
+        .post-content h4 {
+            font-size: 1.1em;
+        }
+
+        .post-content ul,
+        .post-content ol {
+            padding-left: 25px;
+        }
+
+        .post-content blockquote {
+            border-left: 3px solid #185a9d;
+            padding-left: 10px;
+            margin-left: 0;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Reddit Gaming Advisor</h1>
+        <input type="text" id="query" placeholder="Ask a gaming question...">
+        <select id="metric"
+            style="width:100%;margin-bottom:1rem;padding:0.75rem;border-radius:8px;border:1px solid #43cea2;font-size:1.1rem;">
+            <option value="all">All Time</option>
+            <option value="year">Last Year</option>
+            <option value="month">Last Month</option>
+        </select>
+        <button onclick="submitQuery()">Submit</button>
+        <div id="output"></div>
+    </div>
+    <script>
+        async function submitQuery() {
+            const query = document.getElementById('query').value;
+            const metric = document.getElementById('metric').value;
+            const outputDiv = document.getElementById('output');
+            outputDiv.textContent = 'Loading...';
+            try {
+                const response = await fetch(`/query?q=${encodeURIComponent(query)}&metric=${encodeURIComponent(metric)}`);
+                if (!response.ok) {
+                    outputDiv.textContent = 'Error: ' + response.statusText;
+                    return;
+                }
+                const data = await response.json();
+                if (data.results && data.results.length > 0) {
+                    outputDiv.innerHTML = data.results.map((r, idx) => {
+                        const contentId = `post-content-${idx}`;
+                        const buttonId = `toggle-btn-${idx}`;
+                        const contentSection = r.content ? `
+                            <button id="${buttonId}" onclick="toggleContent('${contentId}', '${buttonId}')" style="margin-top:8px;margin-bottom:8px;padding:6px 16px;border-radius:6px;border:none;background:#185a9d;color:#fff;cursor:pointer;">See content</button>
+                            <div id="${contentId}" class="post-content" style="display:none;background-color:#f5f5f5; padding:15px; border-radius:8px; border-left:4px solid #185a9d; margin-top:8px; margin-bottom:15px; max-height:500px; overflow-y:auto; font-size:0.95em;">
+                                ${r.content}
+                            </div>
+                        ` : '';
+                        const subredditSection = r.subreddit ? `<span style='color:#43cea2;font-weight:bold;'>r/${r.subreddit}</span><br>` : '';
+                        return `
+                        <div style="margin-bottom:1.2em;">
+                            ${subredditSection}
+                            <a href="${r.url}" target="_blank" style="color:#185a9d;font-weight:bold;text-decoration:none;">${r.title}</a><br>
+                            ${contentSection}
+                            <span>${r.summary}</span>
+                        </div>
+                        `;
+                    }).join('');
+
+                    // Add toggleContent function
+                    window.toggleContent = function (contentId, buttonId) {
+                        const contentDiv = document.getElementById(contentId);
+                        const button = document.getElementById(buttonId);
+                        if (contentDiv.style.display === 'none') {
+                            contentDiv.style.display = 'block';
+                            button.textContent = 'Hide content';
+                        } else {
+                            contentDiv.style.display = 'none';
+                            button.textContent = 'See content';
+                        }
+                    }
+                } else {
+                    outputDiv.textContent = 'No results found.';
+                }
+            } catch (e) {
+                outputDiv.textContent = 'Error: ' + e;
+            }
+        }
+    </script>
+</body>
+
+</html>
