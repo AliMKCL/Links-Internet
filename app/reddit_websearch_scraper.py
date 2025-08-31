@@ -51,6 +51,10 @@ def fetch_posts_by_ids(post_ids: List[str], max_comments: int = 50) -> List[Dict
         comments = []
         try:
             submission = reddit.submission(id=pid)
+            # Skip video posts
+            if submission.is_video:
+                continue
+                
             submission.comments.replace_more(limit=0)
             comments = [
                 c.body for c in sorted(submission.comments, key=lambda x: x.score, reverse=True)

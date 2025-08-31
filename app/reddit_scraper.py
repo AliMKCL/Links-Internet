@@ -56,6 +56,10 @@ def search_reddit(query: str, limit: int = 50, metric: str = "all"):
         #print(f"[PRAW] Subreddit {idx+1}/{len(subreddits)}: r/{subreddit} - fetching up to {fetch_limit} posts")
         try:
             for submission in reddit.subreddit(subreddit).search(query, sort="relevance", time_filter=time_filter, limit=fetch_limit):
+                # Skip video posts
+                if submission.is_video:
+                    continue
+                
                 submission.comments.replace_more(limit=0)
                 top_comments = [c.body for c in submission.comments[:3]]
                 results.append({
