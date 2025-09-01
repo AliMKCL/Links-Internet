@@ -14,11 +14,16 @@ reddit = praw.Reddit(
     user_agent=REDDIT_USER_AGENT
 )
 
-def search_reddit(query: str, limit: int = 50, metric: str = "all"): 
+def search_reddit(query: str, limit: int = 50, metric: str = "all", subreddit: str = None): 
     results = []
-    subreddits, query = get_relevant_subreddits_from_ai(query, max_subreddits=3)
+    if not subreddit:
+        subreddits, cleaned_query = get_relevant_subreddits_from_ai(query, max_subreddits=3)
+    else:
+        subreddits, cleaned_query = get_relevant_subreddits_from_ai(query, max_subreddits=3, subreddit=subreddit)
+
+
     print("subreddits: ",subreddits)
-    print("Cleaned query: ", query)
+    print("Cleaned query: ", cleaned_query)
 
     if not isinstance(subreddits, list):
         subreddits = [str(subreddits)]
@@ -38,10 +43,10 @@ def search_reddit(query: str, limit: int = 50, metric: str = "all"):
 
     # Determine fetch limits based on number of subreddits
     if len(subreddits) == 1:
-        # If there's 1 subreddit, fetch 50 posts
-        limits = [50]
+        # If there's 1 subreddit, fetch 100 posts
+        limits = [100]
     elif len(subreddits) == 2:
-        # If there are 2 subreddits, fetch 50 from 1st, 30 from 2nd
+        # If there are 2 subreddits, fetch 50 from 1st, 20 from 2nd
         limits = [50, 20]
     else:
         # If there are 3 subreddits, fetch 50 from 1st, 20 from 2nd, 5 from 3rd
@@ -57,6 +62,7 @@ def search_reddit(query: str, limit: int = 50, metric: str = "all"):
         try:
             for submission in reddit.subreddit(subreddit).search(query, sort="relevance", time_filter=time_filter, limit=fetch_limit):
                 # Skip video posts
+                
                 if submission.is_video:
                     continue
                 

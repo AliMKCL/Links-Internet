@@ -44,7 +44,7 @@ def get_relevant_subreddits(query: str, max_subreddits: int = 1):
     return [sub for sub, _ in ranked]
 """
 
-def get_relevant_subreddits_from_ai(query: str, max_subreddits: int = 3):
+def get_relevant_subreddits_from_ai(query: str, max_subreddits: int = 3, subreddit:str = None):
     """
     Uses OpenAI to get relevant subreddit names based on a query.
     Returns a list of subreddit names.
@@ -60,13 +60,18 @@ def get_relevant_subreddits_from_ai(query: str, max_subreddits: int = 3):
     
     print(f"Abbreviation word: {abbreviation_word}")  # Debugging line to check abbreviation word
     
-    prompt = f"User query: {query}\n\n"
-    prompt += f"Suggest up to {max_subreddits} relevant subreddit names (without 'r/' prefix). Try to return as much as possible, but do not return anymore if the subreddits are not closely related to the query.\n"
-    prompt += "Do not suggest vaguely related subreddits that are not specifically about the queried game."
-    prompt += f"The term '{abbreviation_word}' is a fully capitalized abbreviation of a phrase that hints at the target subreddits. If the abbreviation or its full form matches a subreddit name, include both if relevant.\n"
-    prompt += "Use abbreviations or full forms if they match subreddit names. Prefer abbreviations when they are used as subreddit names.\n"
-    prompt += "Return only a Python tuple: (list of subreddit names, remaining query after removing matched parts).\n"
+    if not subreddit:
+        prompt = f"User query: {query}\n\n"
+        prompt += f"Suggest up to {max_subreddits} relevant subreddit names (without 'r/' prefix). Try to return as much as possible, but do not return anymore if the subreddits are not closely related to the query.\n"
+        prompt += "Do not suggest vaguely related subreddits that are not specifically about the queried game."
+        prompt += f"The term '{abbreviation_word}' is a fully capitalized abbreviation of a phrase that hints at the target subreddits. If the abbreviation or its full form matches a subreddit name, include both if relevant.\n"
+        prompt += "Use abbreviations or full forms if they match subreddit names. Prefer abbreviations when they are used as subreddit names.\n"
+        prompt += "Return only a Python tuple: (list of subreddit names, remaining query after removing matched parts).\n"
 
+    else:
+        prompt = f"User query: {query}\n\n"
+        prompt += f"The user has specified the subreddit '{subreddit}'.\n"
+        prompt += f"Return only a Python tuple: (list containing the specified subreddit name '{subreddit}', remaining query after removing the part from the query that makes you infer the subreddit).\n"
 
 
     response = client.chat.completions.create(

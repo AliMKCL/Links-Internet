@@ -82,19 +82,23 @@ def fetch_posts_by_ids(post_ids: List[str], max_comments: int = 50) -> List[Dict
             })
     return posts
 
-def reddit_query_via_ddg(query: str, max_posts: int = 50, max_comments: int = 50, metric: str = "all") -> List[Dict]:
+def reddit_query_via_ddg(query: str, max_posts: int = 50, max_comments: int = 5, metric: str = "all", subreddit: str = None) -> List[Dict]:
     """
     Search Reddit posts via DuckDuckGo, with optional time filter bias (metric: 'all', 'year', 'month').
     """
-    post_ids, cleaned_query = get_reddit_post_ids_from_ai(query, max_results=max_posts, metric=metric)
+    post_ids, cleaned_query = get_reddit_post_ids_from_ai(query, max_results=max_posts, metric=metric, subreddit=subreddit)
     #print("Post IDs: ", post_ids)   # Prints empty list
     posts = fetch_posts_by_ids(post_ids, max_comments=max_comments)
     return posts, cleaned_query
  
 
-
-def get_reddit_post_ids_from_ai(query: str, max_results: int = 50, metric: str = "all") -> List[str]:
-    subreddits, cleaned_query = get_relevant_subreddits_from_ai(query, max_subreddits=3)
+def get_reddit_post_ids_from_ai(query: str, max_results: int = 50, metric: str = "all", subreddit: str = None) -> List[str]:
+    
+    if not subreddit:
+        subreddits, cleaned_query = get_relevant_subreddits_from_ai(query, max_subreddits=3)
+    else:
+        subreddits, cleaned_query = get_relevant_subreddits_from_ai(query, max_subreddits=3, subreddit=subreddit)
+    
     post_ids = []
     now = datetime.datetime.utcnow()
     time_keywords = ""
@@ -117,8 +121,8 @@ def get_reddit_post_ids_from_ai(query: str, max_results: int = 50, metric: str =
     
     # Determine fetch limits based on number of subreddits
     if len(subreddits) == 1:
-        # If there's 1 subreddit, fetch 50 posts
-        limits = [50]
+        # If there's 1 subreddit, fetch 100 posts
+        limits = [100]
     elif len(subreddits) == 2:
         # If there are 2 subreddits, fetch 50 from 1st, 30 from 2nd
         limits = [50, 20]
@@ -144,8 +148,14 @@ def get_reddit_post_ids_from_ai(query: str, max_results: int = 50, metric: str =
             #print(f"DDG Results: {results}")  # Debug: print all DDG results
             for r in results:
                 #print(f"DDG Result URL: {r['href']}")  # Debug: print each result URL
-                match = re.search(r"reddit\.com/r/[^/]+/comments/([a-z0-9]{6,})", r["href"])
+                # More flexible regex that handles various Reddit URL formats
+                match = re.search(r"reddit\.com/r/[^/]+/comments/([a-zA-Z0-9_-]{5,})", r["href"])
                 if match:
                     #print(f"Matched Post ID: {match.group(1)}")  # Debug: print matched post ID
                     post_ids.append(match.group(1))
+                else:
+                    # Try alternative patterns for edge cases
+                    alt_match = re.search(r"reddit\.com/(?:r/[^/]+/)?comments/([a-zA-Z0-9_-]{5,})", r["href"])
+                    if alt_match:
+                        post_ids.append(alt_match.group(1))
     return post_ids, cleaned_query
