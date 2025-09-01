@@ -27,91 +27,171 @@ def root(request: Request):
 @app.get("/query")
 def query(q: str = Query(..., description="Gaming-related question"), metric: str = Query("all", description="Time filter for Reddit search")):
     
-    results = {}
-    shared = {} # Dictionaries are mutable --> Shared between threads
-
-    
-
-    def fetch_ddg():
-        subreddit = "Breath_of_the_Wild"
-        try:
-            posts, clean_query = reddit_query_via_ddg(q, max_posts=200, metric=metric, subreddit=subreddit)
-            results['ddg'] = posts
-            shared['clean_query'] = clean_query # Cleaned query is saved here to the common dictionary
-        except Exception as e:
-            print(f"Error in fetch_ddg: {e}")
-            results['ddg'] = []
-            
-    def fetch_reddit():
-        subreddit = "Breath_of_the_Wild"
-        try:
-            posts, clean_query = search_reddit(q, limit=200, metric=metric, subreddit=subreddit)
-            results['reddit'] = posts
-            shared['clean_query'] = clean_query
-        except Exception as e:
-            print(f"Error in fetch_reddit: {e}")
-            results['reddit'] = []
-
-    ddg_thread = threading.Thread(target=fetch_ddg)
-    reddit_thread = threading.Thread(target=fetch_reddit)
-    ddg_thread.start()
-    reddit_thread.start()
-    ddg_thread.join()
-    reddit_thread.join()
-
     initial_query = q
-    clean_query = shared.get('clean_query', q)  # Use cleaned query if available
-    q = clean_query # For easy changes
-
     print(query_classification(q))  # Print the classification result for debugging
     
-    print("Cleaned query main: ", clean_query)
+    # First, check if relevant posts exist in the database
+    try:
+        db_documents, db_distances, db_metadatas = query_db(q, n_results=10)
+        # Check if we have good matches (distance < 0.3 is generally considered a good match)
+        good_matches = [doc for i, doc in enumerate(db_documents) if db_distances[i] < 0.5]
+        
+        #test_flag = False
 
-    ddg_posts = results['ddg']  # is a dict
-    reddit_posts = results['reddit'] # is a list
+        if  good_matches and len(good_matches) >= 5:  # If we have at least 5 good matches
+            print("Found relevant posts in database!")
+            
+            # Create mock post objects from database results for consistent formatting
+            all_posts = []
+            for i, doc in enumerate(db_documents[:10]):  # For all documents (top 10), the posts are as follows:
+                
+                post = {
+                    "title": db_metadatas[i].get("original_title", doc),  # Use original title if available, fallback to doc
+                    "url": db_metadatas[i]["url"],
+                    "content": db_metadatas[i].get("content", ""),
+                    "subreddit": db_metadatas[i].get("subreddit", "database"),
+                    "_score": 1.0 - db_distances[i],  # Convert distance to score
+                    "created_utc": None
+                }
+                all_posts.append(post)
+            
+            database_message = "Found in the database"
+            
+        else:
+            print("Relevant posts not found in database. Fetching new posts...")
+            database_message = "Relevant posts not found in database"
+            
+            # Original fetching logic
+            results = {}
+            shared = {} # Dictionaries are mutable --> Shared between threads
 
-    # Combine and deduplicate posts by URL 
-    all_posts_dict = {}
+            def fetch_ddg():
+                subreddit = "Breath_of_the_Wild"
+                try:
+                    posts, clean_query = reddit_query_via_ddg(q, max_posts=200, metric=metric, subreddit=subreddit)
+                    results['ddg'] = posts
+                    shared['clean_query'] = clean_query # Cleaned query is saved here to the common dictionary
+                except Exception as e:
+                    print(f"Error in fetch_ddg: {e}")
+                    results['ddg'] = []
+                    
+            def fetch_reddit():
+                subreddit = "Breath_of_the_Wild"
+                try:
+                    posts, clean_query = search_reddit(q, limit=200, metric=metric, subreddit=subreddit)
+                    results['reddit'] = posts
+                    shared['clean_query'] = clean_query
+                except Exception as e:
+                    print(f"Error in fetch_reddit: {e}")
+                    results['reddit'] = []
 
-    print(type(ddg_posts), type(reddit_posts)) # Should be list, list
-    print("Num ddg: ",len(ddg_posts), "Num reddit: ",len(reddit_posts)) # Should be > 0, > 0
+            ddg_thread = threading.Thread(target=fetch_ddg)
+            reddit_thread = threading.Thread(target=fetch_reddit)
+            ddg_thread.start()
+            reddit_thread.start()
+            ddg_thread.join()
+            reddit_thread.join()
 
-    import re
-    for post in ddg_posts + reddit_posts: # + pushshift_posts:
-        url = post["url"]
-        # Extract subreddit if not present
-        if 'subreddit' not in post or not post['subreddit'] or post['subreddit'] == 'unknown':
-            match = re.search(r"reddit.com/r/([a-zA-Z0-9_]+)/", url)
-            if match:
-                post['subreddit'] = match.group(1)
-            else:
-                post['subreddit'] = 'unknown'
-        if url not in all_posts_dict or score_post(post, q) > score_post(all_posts_dict[url], q):
-            all_posts_dict[url] = post  # Overwrites duplicates, keeps highest scored occurrence.
-    all_posts = list(all_posts_dict.values())   # A list of all unique post values
+            clean_query = shared.get('clean_query', q)  # Use cleaned query if available
+            q = clean_query # For easy changes
+            
+            print("Cleaned query main: ", clean_query)
 
-    embed_text(all_posts)
-    print("Embedded all posts. The query returns:")
-    print(query_db(clean_query, n_results=10))
+            ddg_posts = results['ddg']  # is a dict
+            reddit_posts = results['reddit'] # is a list
 
+            # Combine and deduplicate posts by URL 
+            all_posts_dict = {}
 
+            print(type(ddg_posts), type(reddit_posts)) # Should be list, list
+            print("Num ddg: ",len(ddg_posts), "Num reddit: ",len(reddit_posts)) # Should be > 0, > 0
 
+            import re
+            for post in ddg_posts + reddit_posts: # + pushshift_posts:
+                url = post["url"]
+                # Extract subreddit if not present
+                if 'subreddit' not in post or not post['subreddit'] or post['subreddit'] == 'unknown':
+                    match = re.search(r"reddit.com/r/([a-zA-Z0-9_]+)/", url)
+                    if match:
+                        post['subreddit'] = match.group(1)
+                    else:
+                        post['subreddit'] = 'unknown'
+                if url not in all_posts_dict or score_post(post, q) > score_post(all_posts_dict[url], q):
+                    all_posts_dict[url] = post  # Overwrites duplicates, keeps highest scored occurrence.
+            all_posts = list(all_posts_dict.values())   # A list of all unique post values
+
+            embed_text(all_posts)
+            print("Embedded all posts. The query returns:")
+            print(query_db(clean_query, n_results=10))
+            
+    except Exception as e:
+        print(f"Error querying database: {e}")
+        database_message = "Database query failed, fetching new posts"
+        
+        # Fallback to original fetching logic
+        results = {}
+        shared = {}
+
+        def fetch_ddg():
+            subreddit = "Breath_of_the_Wild"
+            try:
+                posts, clean_query = reddit_query_via_ddg(q, max_posts=200, metric=metric, subreddit=subreddit)
+                results['ddg'] = posts
+                shared['clean_query'] = clean_query
+            except Exception as e:
+                print(f"Error in fetch_ddg: {e}")
+                results['ddg'] = []
+                
+        def fetch_reddit():
+            subreddit = "Breath_of_the_Wild"
+            try:
+                posts, clean_query = search_reddit(q, limit=200, metric=metric, subreddit=subreddit)
+                results['reddit'] = posts
+                shared['clean_query'] = clean_query
+            except Exception as e:
+                print(f"Error in fetch_reddit: {e}")
+                results['reddit'] = []
+
+        ddg_thread = threading.Thread(target=fetch_ddg)
+        reddit_thread = threading.Thread(target=fetch_reddit)
+        ddg_thread.start()
+        reddit_thread.start()
+        ddg_thread.join()
+        reddit_thread.join()
+
+        clean_query = shared.get('clean_query', q)
+        q = clean_query
+
+        ddg_posts = results['ddg']
+        reddit_posts = results['reddit']
+        all_posts_dict = {}
+
+        import re
+        for post in ddg_posts + reddit_posts:
+            url = post["url"]
+            if 'subreddit' not in post or not post['subreddit'] or post['subreddit'] == 'unknown':
+                match = re.search(r"reddit.com/r/([a-zA-Z0-9_]+)/", url)
+                if match:
+                    post['subreddit'] = match.group(1)
+                else:
+                    post['subreddit'] = 'unknown'
+            if url not in all_posts_dict or score_post(post, q) > score_post(all_posts_dict[url], q):
+                all_posts_dict[url] = post
+        all_posts = list(all_posts_dict.values())
+        
+        embed_text(all_posts)
 
 
 
     # Up to here: Fetched and collected under all_posts
 
-
-
-
+    print(f"\nProcessing with message: {database_message}")
 
     print(("\n ALL POSTS !!!!!!!!!!! \n"))
     for post in all_posts:
         print("Title: ", post["title"] + "\n")
         #if post["content"]:
         #    print("Content: ", post["content"] + "\n")
-
-
 
     # Add post time to each post (if not already present)
     for post in all_posts:
@@ -121,10 +201,10 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
         if hasattr(post, "created_utc"):
             post["created_utc"] = post.created_utc
 
-
     # Compute and attach scores to each post for consistent display and sorting
     for post in all_posts:
-        post["_score"] = score_post(post, q)
+        if "_score" not in post:  # Only calculate if not already set
+            post["_score"] = score_post(post, q)
 
     # Sort by score, then by recency
     ranked_posts = sorted(
@@ -133,7 +213,6 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
         reverse=True
     )
 
-
     # Print scores for debugging
     print("\nRANKED POSTS WITH SCORES:")
     for post in ranked_posts:
@@ -141,33 +220,22 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
         print(f"Subreddit: {subreddit}")
         print(f"{post['title']} [Score: {post['_score']:.2f}]")
 
-    # Use AI to rank the top x scored posts based on the query
-    ai_ranked_posts = ai_rank_posts(ranked_posts[:20], initial_query)
+    # Use AI to rank the top x scored posts based on the query (skip if from database)
+    if database_message == "Found in the database":
+        ai_ranked_posts = ranked_posts[:10]  # Just use top 10 database results
+        print("Skipping AI ranking for database results")
+    else:
+        ai_ranked_posts = ai_rank_posts(ranked_posts[:20], initial_query)
 
-    # Print scores for debugging
-    print("\nAI RANKED POSTS WITH SCORES:")
-    for post in ai_ranked_posts:
-        subreddit = post.get('subreddit', 'unknown')
-        print(f"Subreddit: {subreddit}")
-        print(f"{post['title']} [Score: {post['_score']:.2f}]")
-    
+        # Print scores for debugging
+        print("\nAI RANKED POSTS WITH SCORES:")
+        for post in ai_ranked_posts:
+            subreddit = post.get('subreddit', 'unknown')
+            print(f"Subreddit: {subreddit}")
+            print(f"{post['title']} [Score: {post['_score']:.2f}]")
 
-    # Get the order of subreddits as they appear in the ranked posts
-    subreddit_order = []
-    for post in ai_ranked_posts:
-        sub = post.get('subreddit', 'unknown')
-        if sub not in subreddit_order:
-            subreddit_order.append(sub)
-
-    # Sort posts so that all posts from the 1st subreddit come first, then 2nd, etc., preserving their relative order
-    def subreddit_sort_key(post):
-        sub = post.get('subreddit', 'unknown')
-        try:
-            return subreddit_order.index(sub)   # The index of the subreddit in the order list
-        except ValueError:
-            return len(subreddit_order)
-
-    ai_ranked_posts_sorted = sorted(ai_ranked_posts, key=subreddit_sort_key)
+    # Skip subreddit grouping - just use the AI-ranked posts in score order
+    ai_ranked_posts_sorted = ai_ranked_posts  # Posts are already sorted by score from AI ranking or database query
 
     summarized_results = []
     for i, post in enumerate(ai_ranked_posts_sorted):
@@ -180,8 +248,16 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
         raw_content = format_post_content(post.get("content", ""))
         post_content = enhance_post_content_for_html(raw_content) if raw_content else ""
         subreddit = post.get('subreddit', 'unknown')
+        
+        # Add database message to the first result's title
+        title = post['title']
+        """
+        if i == 0:
+            title = f'[{database_message}] {title}'
+        """
+        
         summarized_results.append({
-            "title": f"{post['title']} [Score: {post['_score']:.2f}] [Date: {date_str}]",
+            "title": f"{title} [Score: {post['_score']:.2f}] [Date: {date_str}]",
             "url": post["url"],
             "summary": "",  # No summary if ranking by title only
             "content": post_content,  # Formatted post content for all posts
