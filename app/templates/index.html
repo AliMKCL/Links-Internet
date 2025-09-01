@@ -202,19 +202,30 @@
                 if (data.results && data.results.length > 0) {
                     outputDiv.innerHTML = data.results.map((r, idx) => {
                         const contentId = `post-content-${idx}`;
-                        const buttonId = `toggle-btn-${idx}`;
+                        const commentsId = `post-comments-${idx}`;
+                        const contentButtonId = `toggle-content-btn-${idx}`;
+                        const commentsButtonId = `toggle-comments-btn-${idx}`;
+
                         const contentSection = r.content ? `
-                            <button id="${buttonId}" onclick="toggleContent('${contentId}', '${buttonId}')" style="margin-top:8px;margin-bottom:8px;padding:6px 16px;border-radius:6px;border:none;background:#185a9d;color:#fff;cursor:pointer;">See content</button>
+                            <button id="${contentButtonId}" onclick="toggleContent('${contentId}', '${contentButtonId}')" style="margin-top:8px;margin-bottom:8px;margin-right:8px;padding:6px 16px;border-radius:6px;border:none;background:#185a9d;color:#fff;cursor:pointer;">See content</button>
                             <div id="${contentId}" class="post-content" style="display:none;background-color:#f5f5f5; padding:15px; border-radius:8px; border-left:4px solid #185a9d; margin-top:8px; margin-bottom:15px; max-height:500px; overflow-y:auto; font-size:0.95em;">
                                 ${r.content}
                             </div>
                         ` : '';
+
+                        const commentsSection = r.comments ? `
+                            <button id="${commentsButtonId}" onclick="toggleContent('${commentsId}', '${commentsButtonId}')" style="margin-top:8px;margin-bottom:8px;padding:6px 16px;border-radius:6px;border:none;background:#43cea2;color:#fff;cursor:pointer;">See comments</button>
+                            <div id="${commentsId}" class="post-comments" style="display:none;background-color:#f0f8ff; padding:15px; border-radius:8px; border-left:4px solid #43cea2; margin-top:8px; margin-bottom:15px; max-height:400px; overflow-y:auto; font-size:0.9em;">
+                                ${r.comments}
+                            </div>
+                        ` : '';
+
                         const subredditSection = r.subreddit ? `<span style='color:#43cea2;font-weight:bold;'>r/${r.subreddit}</span><br>` : '';
                         return `
                         <div style="margin-bottom:1.2em;">
                             ${subredditSection}
                             <a href="${r.url}" target="_blank" style="color:#185a9d;font-weight:bold;text-decoration:none;">${r.title}</a><br>
-                            ${contentSection}
+                            ${contentSection}${commentsSection}
                             <span>${r.summary}</span>
                         </div>
                         `;
@@ -226,10 +237,18 @@
                         const button = document.getElementById(buttonId);
                         if (contentDiv.style.display === 'none') {
                             contentDiv.style.display = 'block';
-                            button.textContent = 'Hide content';
+                            if (buttonId.includes('content')) {
+                                button.textContent = 'Hide content';
+                            } else if (buttonId.includes('comments')) {
+                                button.textContent = 'Hide comments';
+                            }
                         } else {
                             contentDiv.style.display = 'none';
-                            button.textContent = 'See content';
+                            if (buttonId.includes('content')) {
+                                button.textContent = 'See content';
+                            } else if (buttonId.includes('comments')) {
+                                button.textContent = 'See comments';
+                            }
                         }
                     }
                 } else {

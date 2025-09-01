@@ -12,17 +12,17 @@ openai_ef = embedding_functions.OpenAIEmbeddingFunction(
                 model_name="text-embedding-3-small"
             )
 
-# TESTING, REMOVE LATER - Delete collection to start fresh with new embedding logic
-
-"""
-try:
-    chroma_client.delete_collection(name="posts")
-    print("Deleted existing collection to start fresh with enhanced embedding")
-except:
-    pass
-"""
-
 collection = chroma_client.get_or_create_collection(name="posts", embedding_function=openai_ef)
+
+def delete_collection():
+    # TESTING, REMOVE LATER - Delete collection to start fresh with new embedding logic
+    try:
+        chroma_client.delete_collection(name="posts")
+        print("Deleted existing collection to start fresh with enhanced embedding")
+    except Exception as e:
+        print("Could not delete the collection:", e)
+
+
 
 def embed_text(posts: list[dict]) -> None:
     for post in posts:
@@ -52,6 +52,10 @@ def embed_text(posts: list[dict]) -> None:
                     content = content[:1000]  # Truncate to first 1000 chars
                 post["content"] = content
                 
+                # Convert comments list to string for ChromaDB compatibility
+                comments = post.get("comments", [])
+                comments_str = " | ".join(comments) if comments else ""  # Join comments with separator
+                
                 collection.add(
                     documents=[title_for_embedding],  # Use enhanced title for embedding
                     ids=[post["url"]],  # Use URL as unique ID
@@ -61,9 +65,11 @@ def embed_text(posts: list[dict]) -> None:
                         "subreddit": post.get("subreddit", "unknown"),
                         "content": post.get("content", ""),
                         "score": post.get("_score", 0),
-                        "original_title": original_title  # Store original title for display
+                        "original_title": original_title,  # Store original title for display
+                        "comments": comments_str,  # Store comments as string
                     }]
                 )
+                    
         except Exception as e:
             print(f"Error embedding post {post.get('title', 'unknown')}: {e}")
 

@@ -8,9 +8,10 @@ from app.reddit_websearch_scraper import reddit_query_via_ddg
 from datetime import datetime
 from app.ranking_posts import ai_rank_posts, score_post, format_post_content
 # from app.pushshift_scraper import search_pushshift
-from app.database import embed_text, query_db
+from app.database import embed_text, query_db, delete_collection
 import threading
 from app.utilities import enhance_post_content_for_html, query_classification
+import re
 
 
 app = FastAPI(title="Reddit Gaming Advisor")
@@ -27,6 +28,9 @@ def root(request: Request):
 @app.get("/query")
 def query(q: str = Query(..., description="Gaming-related question"), metric: str = Query("all", description="Time filter for Reddit search")):
     
+    #delete_collection()  # For testing, remove later
+
+
     initial_query = q
     print(query_classification(q))  # Print the classification result for debugging
     
@@ -36,9 +40,10 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
         # Check if we have good matches (distance < 0.3 is generally considered a good match)
         good_matches = [doc for i, doc in enumerate(db_documents) if db_distances[i] < 0.5]
         
-        #test_flag = False
+        test_flag = False
 
-        if  good_matches and len(good_matches) >= 5:  # If we have at least 5 good matches
+        # If relevant posts are found in the database, use them directly
+        if  test_flag and good_matches and len(good_matches) >= 5:  # If we have at least 5 good matches
             print("Found relevant posts in database!")
             
             # Create mock post objects from database results for consistent formatting
@@ -49,6 +54,7 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
                     "title": db_metadatas[i].get("original_title", doc),  # Use original title if available, fallback to doc
                     "url": db_metadatas[i]["url"],
                     "content": db_metadatas[i].get("content", ""),
+                    "comments": db_metadatas[i].get("comments", "").split(" | ") if db_metadatas[i].get("comments") else [],  # Convert string back to list
                     "subreddit": db_metadatas[i].get("subreddit", "database"),
                     "_score": 1.0 - db_distances[i],  # Convert distance to score
                     "created_utc": None
@@ -57,6 +63,7 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
             
             database_message = "Found in the database"
             
+        # If no relevant posts are found in the db, fetch new ones.
         else:
             print("Relevant posts not found in database. Fetching new posts...")
             database_message = "Relevant posts not found in database"
@@ -66,7 +73,7 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
             shared = {} # Dictionaries are mutable --> Shared between threads
 
             def fetch_ddg():
-                subreddit = "Breath_of_the_Wild"
+                subreddit = "botw"
                 try:
                     posts, clean_query = reddit_query_via_ddg(q, max_posts=200, metric=metric, subreddit=subreddit)
                     results['ddg'] = posts
@@ -76,7 +83,7 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
                     results['ddg'] = []
                     
             def fetch_reddit():
-                subreddit = "Breath_of_the_Wild"
+                subreddit = "botw"
                 try:
                     posts, clean_query = search_reddit(q, limit=200, metric=metric, subreddit=subreddit)
                     results['reddit'] = posts
@@ -106,7 +113,6 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
             print(type(ddg_posts), type(reddit_posts)) # Should be list, list
             print("Num ddg: ",len(ddg_posts), "Num reddit: ",len(reddit_posts)) # Should be > 0, > 0
 
-            import re
             for post in ddg_posts + reddit_posts: # + pushshift_posts:
                 url = post["url"]
                 # Extract subreddit if not present
@@ -121,8 +127,27 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
             all_posts = list(all_posts_dict.values())   # A list of all unique post values
 
             embed_text(all_posts)
-            print("Embedded all posts. The query returns:")
-            print(query_db(clean_query, n_results=10))
+            print("Embedded all posts. Now querying database for results...")
+            
+            # Query the database to get the newly embedded posts
+            db_documents, db_distances, db_metadatas = query_db(clean_query, n_results=10)
+            print("Database query results:", len(db_documents), "documents found")
+            
+            # Create post objects from database results for consistent formatting
+            all_posts = []
+            for i, doc in enumerate(db_documents):
+                post = {
+                    "title": db_metadatas[i].get("original_title", doc),  # Use original title if available, fallback to doc
+                    "url": db_metadatas[i]["url"],
+                    "content": db_metadatas[i].get("content", ""),
+                    "comments": db_metadatas[i].get("comments", "").split(" | ") if db_metadatas[i].get("comments") else [],  # Convert string back to list
+                    "subreddit": db_metadatas[i].get("subreddit", "database"),
+                    "_score": 1.0 - db_distances[i],  # Convert distance to score (database similarity score)
+                    "created_utc": db_metadatas[i].get("created_utc")
+                }
+                all_posts.append(post)
+            
+            database_message = "Found in the database (newly added)"
             
     except Exception as e:
         print(f"Error querying database: {e}")
@@ -133,7 +158,7 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
         shared = {}
 
         def fetch_ddg():
-            subreddit = "Breath_of_the_Wild"
+            subreddit = "botw"
             try:
                 posts, clean_query = reddit_query_via_ddg(q, max_posts=200, metric=metric, subreddit=subreddit)
                 results['ddg'] = posts
@@ -143,7 +168,7 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
                 results['ddg'] = []
                 
         def fetch_reddit():
-            subreddit = "Breath_of_the_Wild"
+            subreddit = "botw"
             try:
                 posts, clean_query = search_reddit(q, limit=200, metric=metric, subreddit=subreddit)
                 results['reddit'] = posts
@@ -166,7 +191,6 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
         reddit_posts = results['reddit']
         all_posts_dict = {}
 
-        import re
         for post in ddg_posts + reddit_posts:
             url = post["url"]
             if 'subreddit' not in post or not post['subreddit'] or post['subreddit'] == 'unknown':
@@ -180,6 +204,27 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
         all_posts = list(all_posts_dict.values())
         
         embed_text(all_posts)
+        print("Embedded all posts. Now querying database for results...")
+        
+        # Query the database to get the newly embedded posts
+        db_documents, db_distances, db_metadatas = query_db(clean_query, n_results=10)
+        print("Database query results:", len(db_documents), "documents found")
+        
+        # Create post objects from database results for consistent formatting
+        all_posts = []
+        for i, doc in enumerate(db_documents):
+            post = {
+                "title": db_metadatas[i].get("original_title", doc),  # Use original title if available, fallback to doc
+                "url": db_metadatas[i]["url"],
+                "content": db_metadatas[i].get("content", ""),
+                "comments": db_metadatas[i].get("comments", "").split(" | ") if db_metadatas[i].get("comments") else [],  # Convert string back to list
+                "subreddit": db_metadatas[i].get("subreddit", "database"),
+                "_score": 1.0 - db_distances[i],  # Convert distance to score (database similarity score)
+                "created_utc": db_metadatas[i].get("created_utc")
+            }
+            all_posts.append(post)
+        
+        database_message = "Found in the database (newly added)"
 
 
 
@@ -221,7 +266,7 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
         print(f"{post['title']} [Score: {post['_score']:.2f}]")
 
     # Use AI to rank the top x scored posts based on the query (skip if from database)
-    if database_message == "Found in the database":
+    if database_message in ["Found in the database", "Found in the database (newly added)"]:
         ai_ranked_posts = ranked_posts[:10]  # Just use top 10 database results
         print("Skipping AI ranking for database results")
     else:
@@ -247,6 +292,13 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
         # Format post content for every post
         raw_content = format_post_content(post.get("content", ""))
         post_content = enhance_post_content_for_html(raw_content) if raw_content else ""
+        
+        # Format comments for display
+        comments = post.get("comments", [])
+        formatted_comments = ""
+        if comments:
+            formatted_comments = "<br>".join([f"<div style='background:#f9f9f9;padding:10px;margin:5px 0;border-left:3px solid #185a9d;border-radius:4px;'>{comment}</div>" for comment in comments if comment.strip()])
+        
         subreddit = post.get('subreddit', 'unknown')
         
         # Add database message to the first result's title
@@ -261,6 +313,7 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
             "url": post["url"],
             "summary": "",  # No summary if ranking by title only
             "content": post_content,  # Formatted post content for all posts
+            "comments": formatted_comments,  # Formatted comments for display
             "created_utc": post_time,
             "is_top_post": i == 0,  # Flag to identify top post
             "subreddit": subreddit
