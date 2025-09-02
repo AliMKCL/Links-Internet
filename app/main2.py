@@ -15,6 +15,7 @@ import re
 
 
 app = FastAPI(title="Reddit Gaming Advisor")
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.mount("/templates", StaticFiles(directory="app/templates"), name="templates")
 templates = Jinja2Templates(directory="app/templates")
 
@@ -40,10 +41,10 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
         # Check if we have good matches (distance < 0.3 is generally considered a good match)
         good_matches = [doc for i, doc in enumerate(db_documents) if db_distances[i] < 0.5]
         
-        test_flag = False
+        #test_flag = False
 
         # If relevant posts are found in the database, use them directly
-        if  test_flag and good_matches and len(good_matches) >= 5:  # If we have at least 5 good matches
+        if  good_matches and len(good_matches) >= 5:  # If we have at least 5 good matches
             print("Found relevant posts in database!")
             
             # Create mock post objects from database results for consistent formatting

@@ -1,0 +1,362 @@
+body {
+    background: linear-gradient(135deg, #43cea2 0%, #185a9d 100%);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #222;
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+    padding: 2rem 2.5rem 2.5rem 2.5rem;
+    margin-top: 4rem;
+    width: 100%;
+    max-width: 800px;
+    /* Increased from 500px to accommodate post content */
+}
+
+h1 {
+    text-align: center;
+    color: #185a9d;
+    margin-bottom: 1.5rem;
+}
+
+/* Form styling */
+.query-input,
+.metric-select {
+    width: 100%;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid #43cea2;
+    font-size: 1.1rem;
+    outline: none;
+    transition: border 0.2s;
+}
+
+.query-input:focus,
+.metric-select:focus {
+    border: 1.5px solid #185a9d;
+}
+
+.submit-button {
+    background: linear-gradient(90deg, #43cea2 0%, #185a9d 100%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 2rem;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: filter 0.2s;
+    margin-bottom: 1rem;
+}
+
+/* Legacy button styling for compatibility */
+button {
+    background: linear-gradient(90deg, #43cea2 0%, #185a9d 100%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 2rem;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: filter 0.2s;
+    margin-bottom: 1rem;
+}
+
+button:hover,
+.submit-button:hover {
+    filter: brightness(0.85);
+}
+
+/* CSS-only toggle functionality */
+.toggle-checkbox {
+    display: none;
+}
+
+.toggle-label {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 6px;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.9em;
+    text-decoration: none;
+    transition: filter 0.2s;
+    margin-right: 8px;
+    margin-top: 6px;
+    margin-bottom: 4px;
+}
+
+.toggle-label:hover {
+    filter: brightness(0.9);
+}
+
+/* Button colors */
+.content-button {
+    background: #185a9d;
+}
+
+.comments-button {
+    background: #43cea2;
+}
+
+/* Hide content by default */
+.toggle-content {
+    display: none;
+    background-color: #f5f5f5;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    max-height: 500px;
+    overflow-y: auto;
+    font-size: 0.95em;
+}
+
+.content-section {
+    border-left: 4px solid #185a9d;
+}
+
+.comments-section {
+    background-color: #f0f8ff;
+    border-left: 4px solid #43cea2;
+    max-height: 400px;
+    font-size: 0.9em;
+}
+
+/* Show content when checkbox is checked */
+.toggle-checkbox:checked+.toggle-label+.toggle-content {
+    display: block;
+}
+
+/* Change label text when checked */
+.toggle-label.content-button::after {
+    content: "See content";
+}
+
+.toggle-label.comments-button::after {
+    content: "See comments";
+}
+
+.toggle-checkbox:checked+.toggle-label.content-button::after {
+    content: "Hide content";
+}
+
+.toggle-checkbox:checked+.toggle-label.comments-button::after {
+    content: "Hide comments";
+}
+
+/* Hide the original label text and show only ::after content */
+.toggle-label {
+    font-size: 0;
+}
+
+.toggle-label::after {
+    font-size: 0.9em;
+}
+
+/* Additional styling for post elements */
+.subreddit-name {
+    color: #43cea2;
+    font-weight: bold;
+}
+
+.post-title {
+    color: #185a9d;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.post-title:hover {
+    text-decoration: underline;
+}
+
+.post-summary {
+    font-size: 1em;
+    color: #222;
+}
+
+#output {
+    margin-top: 0.75rem;
+    /* Reduced from 1.5rem */
+    padding: 1rem;
+    background: #f0f8ff;
+    border-radius: 10px;
+    min-height: 60px;
+    box-shadow: 0 2px 8px rgba(24, 90, 157, 0.08);
+    color: #185a9d;
+    font-size: 1.05rem;
+    white-space: pre-line;
+}
+
+/* Styling for tables in post content */
+#output table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 15px 0;
+    font-size: 0.9em;
+    table-layout: auto;
+}
+
+#output table,
+#output th,
+#output td {
+    border: 1px solid #ccc;
+}
+
+#output th,
+#output td {
+    padding: 8px;
+    text-align: left;
+    vertical-align: top;
+    word-wrap: break-word;
+    max-width: 300px;
+}
+
+#output th {
+    background-color: #f2f2f2;
+    color: #185a9d;
+    font-weight: bold;
+}
+
+#output tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+#output tr:hover {
+    background-color: #f0f8ff;
+}
+
+#output strong {
+    color: #185a9d;
+}
+
+#output pre {
+    background: #f5f5f5;
+    border-left: 3px solid #185a9d;
+    padding: 10px;
+    overflow-x: auto;
+    font-family: monospace;
+}
+
+#output h2,
+#output h3,
+#output h4 {
+    color: #185a9d;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    margin-bottom: 15px;
+}
+
+.post-content {
+    line-height: 1.5;
+}
+
+.post-content h2 {
+    font-size: 1.5em;
+}
+
+.post-content h3 {
+    font-size: 1.3em;
+}
+
+.post-content h4 {
+    font-size: 1.1em;
+}
+
+.post-content ul,
+.post-content ol {
+    padding-left: 25px;
+}
+
+.post-content blockquote {
+    border-left: 3px solid #185a9d;
+    padding-left: 10px;
+    margin-left: 0;
+    color: #666;
+}
+
+/* Post styling */
+.post-item {
+    margin-bottom: 80px;
+    /* Reduced from 0.5em to 0.025em (half the size) */
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5em;
+    padding-top: 0.025em;
+    /* Increased bottom padding to accommodate content */
+    overflow: visible;
+    /* Allow content to expand the container */
+}
+
+.post-buttons-container {
+    margin-top: 4px;
+    margin-bottom: 0px;
+    /* Remove any bottom margin */
+    position: relative;
+    /* Allow positioning of content */
+}
+
+.post-buttons {
+    white-space: nowrap;
+}
+
+.content-button,
+.comments-button {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 6px;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.content-button {
+    background: #185a9d;
+    margin-right: 8px;
+}
+
+.comments-button {
+    background: #43cea2;
+}
+
+.content-section,
+.comments-section {
+    background-color: #f5f5f5;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+    max-height: 500px;
+    overflow-y: auto;
+    font-size: 0.95em;
+    position: relative;
+    /* Ensure proper positioning */
+    clear: both;
+    /* Clear any floating elements */
+}
+
+.content-section {
+    border-left: 4px solid #185a9d;
+}
+
+.comments-section {
+    background-color: #f0f8ff;
+    border-left: 4px solid #43cea2;
+    max-height: 400px;
+    font-size: 0.9em;
+}
