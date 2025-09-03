@@ -9,7 +9,7 @@ from datetime import datetime
 from app.ranking_posts import ai_rank_posts, score_post, format_post_content
 # from app.pushshift_scraper import search_pushshift
 import threading
-from app.utilities import enhance_post_content_for_html, query_classification
+from app.utilities import enhance_post_content_for_html, question_statement_classification
 
 import sys
 import numpy
@@ -63,7 +63,7 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
     q = clean_query # For easy changes
 
     # Causing numpy error???
-    print(query_classification(q))  # Print the classification result for debugging
+    print(question_statement_classification(q))  # Print the classification result for debugging
     
     print("Cleaned query main: ", clean_query)
 
@@ -113,7 +113,7 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
 
 
     # Print scores for debugging
-    print("\nRANKED POSTS WITH SCORES:")
+    print("\nRANKED POSTS WITH SCORES:\n")
     for post in ranked_posts:
         subreddit = post.get('subreddit', 'unknown')
         print(f"Subreddit: {subreddit}")

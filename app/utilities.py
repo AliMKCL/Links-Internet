@@ -1,6 +1,11 @@
 import re
 import html
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
+from openai import OpenAI
+
+from app.config import OPENAI_KEY
+
+client = OpenAI(api_key=OPENAI_KEY)
 
 def enhance_post_content_for_html(content):
     """Format post content for better HTML display, especially Reddit tables"""
@@ -154,7 +159,7 @@ def enhance_post_content_for_html(content):
     return content
 
 # Good response but no botw (abbreviations) as subreddits.
-def query_classification(query: str) ->int:  
+def question_statement_classification(query: str) ->int:  
     """
     Classifies the query as a question or statement using a pre-trained model.
     """
@@ -170,7 +175,7 @@ def query_classification(query: str) ->int:
     label = result[0]['label']
     score = result[0]['score']
 
-    if label == "LABEL_1" and score > 0.7:
+    if label == "LABEL_1" and score > 0.5:
         print("Query classified as a question.")
         return 1  # Question
     else:
@@ -224,4 +229,105 @@ def query_classificationNEW(query: str) -> int:
         print("Query classified as a statement.")
         return 0
 
- 
+def markdown_to_html(text):
+    """Convert Markdown text to HTML with styling that matches the screenshot"""
+    if not text:
+        return ""
+    
+    # Escape any existing HTML for safety
+    text = html.escape(text)
+    
+    # Convert section headers (**Header**) - only these should be larger
+    text = re.sub(r'\*\*(.+?)\*\*', r'<strong style="color:#185a9d;font-weight:600;font-size:1.2em;margin-top:10px;margin-bottom:5px;display:block;">\1</strong>', text)
+    
+    # Convert bullet points with numbers (- 1. item)
+    text = re.sub(r'^- (\d+\. .+)$', r'<div style="margin:2px 0;padding-left:15px;">- \1</div>', text, flags=re.MULTILINE)
+    
+    # Convert regular bullet points (- item)
+    text = re.sub(r'^- (.+)$', r'<div style="margin:2px 0;padding-left:15px;">- \1</div>', text, flags=re.MULTILINE)
+    
+    # Convert line breaks to <br> tags
+    text = text.replace('\n\n', '<br><br>')
+    text = text.replace('\n', '<br>')
+    
+    # Add proper paragraph spacing with reduced gaps
+    text = re.sub(r'(<strong[^>]*>.*?</strong>)', r'<br>\1', text)
+    text = re.sub(r'^<br>', '', text)  # Remove leading <br>
+    
+    return text
+    
+def post_summary_generation(posts, query):
+    """
+    Generates a comprehensive answer based on all posts using OpenAI.
+    """
+    try:
+        # Build structured content from all posts
+        all_posts_content = []
+        
+        for i, post in enumerate(posts, 1):
+            post_group = f"POST {i}:\n"
+            post_group += f"Title: {post.get('title', 'No title')}\n"
+            
+            content = post.get('content', '').strip()
+            if content:
+                post_group += f"Content: {content}\n"
+            else:
+                post_group += "Content: No content available\n"
+            
+            comments = post.get('comments', [])
+            if comments:
+                post_group += "Comments:\n"
+                for j, comment in enumerate(comments[:5], 1):  # Limit to top 5 comments per post
+                    post_group += f"  {j}. {comment.strip()}\n"
+            else:
+                post_group += "Comments: No comments available\n"
+            
+            post_group += "\n" + "-"*50 + "\n\n"
+            all_posts_content.append(post_group)
+        
+        # Combine all posts into single content block
+        combined_content = "".join(all_posts_content)
+        
+        # Create the prompt
+        prompt = f"User Query: '{query}'\n\n"
+        prompt += "Below are Reddit posts with their titles, content, and comments:\n\n"
+        prompt += combined_content
+        prompt += "Based on ALL the information above from these Reddit posts, provide a comprehensive answer to the user's query. "
+        prompt += "Include relevant details from titles, content, and comments. "
+        prompt += "If there are multiple useful answers or approaches, present them clearly. "
+        prompt += "Be specific and cite information from the posts when relevant.\n\n"
+        prompt += "Use a straightforward, informative tone. Avoid unnecessary fluff or filler. "
+        prompt += "Do NOT include responses in the end that shows its an LLM answering a query, just provide the answer and nothing more."
+        prompt += "IMPORTANT: Format your response EXACTLY like this structure:\n\n"
+        prompt += "**Short summary**\n"
+        prompt += "[1-3 sentences directly answering the user's question with the most important information]\n\n"
+        prompt += "**Contents (what's in this reply)**\n"
+        prompt += "- 1. [First main topic]\n"
+        prompt += "- 2. [Second main topic]\n"
+        prompt += "- 3. [Third main topic]\n"
+        prompt += "[Continue with numbered bullet points for each section you'll cover]\n\n"
+        prompt += "**1. [First main topic title]**\n"
+        prompt += "[Detailed information about first topic with specific details from posts]\n\n"
+        prompt += "**2. [Second main topic title]**\n"
+        prompt += "[Detailed information about second topic]\n\n"
+        prompt += "[Continue with numbered sections as needed]\n\n"
+        prompt += "CRITICAL: Only use **bold** for section headers (like 'Short summary', 'Contents', '1. Topic'). "
+        prompt += "Do NOT use bold for weapon names, item names, or any content within sections. "
+        prompt += "All content text should be plain text without any markdown formatting."
+
+        response = client.chat.completions.create(
+            model="gpt-5-mini",
+            messages=[{"role": "user", "content": prompt}],
+        )
+        
+        summary = response.choices[0].message.content.strip()
+        
+        # Convert markdown to HTML for proper formatting
+        formatted_summary = markdown_to_html(summary)
+        
+        return formatted_summary
+        
+    except Exception as e:
+        print(f"Error generating summary: {e}")
+        return "Error generating summary."
+    

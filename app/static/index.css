@@ -1,5 +1,16 @@
+@font-face {
+    font-family: 'Hylia Serif Beta';
+    src: url('/fonts/HyliaSerifBeta-Regular.woff2') format('woff2'),
+        url('/fonts/HyliaSerifBeta-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 body {
-    background: linear-gradient(135deg, #43cea2 0%, #185a9d 100%);
+    background: url('/static/background1.jpg') center center no-repeat;
+    background-size: cover;
+    background-attachment: fixed;
     font-family: 'Segoe UI', Arial, sans-serif;
     color: #222;
     min-height: 100vh;
@@ -7,31 +18,70 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
+    padding: 0;
 }
 
 .container {
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.7);
     border-radius: 16px;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
-    padding: 2rem 2.5rem 2.5rem 2.5rem;
-    margin-top: 4rem;
-    width: 100%;
+    padding: 1.5rem 1.875rem;
+    margin: 0;
+    width: 67.5%;
+    max-width: 600px;
+    height: 60vh;
+    max-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+/* Expanded container after submit button is pressed */
+.container.expanded {
+    width: 90%;
     max-width: 800px;
-    /* Increased from 500px to accommodate post content */
+    height: 80vh;
+    max-height: 80vh;
+    padding: 2rem 2.5rem;
 }
 
 h1 {
     text-align: center;
     color: #185a9d;
     margin-bottom: 1.5rem;
+    font-family: 'Hylia Serif Beta', 'Segoe UI', Arial, sans-serif;
+    font-size: 2.2rem;
+    text-shadow: 0 2px 4px rgba(24, 90, 157, 0.3);
+    flex-shrink: 0;
 }
 
 /* Form styling */
-.query-input,
-.metric-select {
-    width: 100%;
+.form-row {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
     margin-bottom: 1rem;
+    flex-shrink: 0;
+    /* Removed padding to match output section alignment */
+}
+
+.query-input {
+    flex: 0 0 70%;
+    /* Reduced from 78% to create more whitespace */
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid #43cea2;
+    font-size: 1.1rem;
+    outline: none;
+    transition: border 0.2s;
+}
+
+.metric-select {
+    flex: 0 0 25%;
+    /* Increased from 20% to maintain proportion */
     padding: 0.75rem;
     border-radius: 8px;
     border: 1px solid #43cea2;
@@ -45,6 +95,16 @@ h1 {
     border: 1.5px solid #185a9d;
 }
 
+/* Button row styling */
+.button-row {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-shrink: 0;
+    /* Removed padding to match output section alignment */
+}
+
 .submit-button {
     background: linear-gradient(90deg, #43cea2 0%, #185a9d 100%);
     color: #fff;
@@ -54,7 +114,10 @@ h1 {
     font-size: 1.1rem;
     cursor: pointer;
     transition: filter 0.2s;
-    margin-bottom: 1rem;
+    margin-bottom: 0;
+    font-family: 'Hylia Serif Beta', 'Segoe UI', Arial, sans-serif;
+    flex-shrink: 0;
+    /* Prevent button from shrinking */
 }
 
 /* Legacy button styling for compatibility */
@@ -67,7 +130,10 @@ button {
     font-size: 1.1rem;
     cursor: pointer;
     transition: filter 0.2s;
-    margin-bottom: 1rem;
+    margin-bottom: 0;
+    font-family: 'Hylia Serif Beta', 'Segoe UI', Arial, sans-serif;
+    flex-shrink: 0;
+    /* Prevent button from shrinking */
 }
 
 button:hover,
@@ -184,17 +250,32 @@ button:hover,
     color: #222;
 }
 
+.ocarina_link {
+    height: 480px;
+    width: 480px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-58%, -20%);
+    z-index: 1;
+    justify-content: center;
+}
+
 #output {
-    margin-top: 0.75rem;
+    /*margin-top: 0.75rem;*/
     /* Reduced from 1.5rem */
     padding: 1rem;
-    background: #f0f8ff;
+    background: #ffffff, 0.7;
     border-radius: 10px;
     min-height: 60px;
-    box-shadow: 0 2px 8px rgba(24, 90, 157, 0.08);
+    /*box-shadow: 0 2px 8px rgba(24, 90, 157, 0.08);*/
     color: #185a9d;
     font-size: 1.05rem;
     white-space: pre-line;
+    flex: 1;
+    overflow-y: auto;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 /* Styling for tables in post content */
@@ -359,4 +440,159 @@ button:hover,
     border-left: 4px solid #43cea2;
     max-height: 400px;
     font-size: 0.9em;
+}
+
+/* Toggle Switch Styles */
+.view-toggle-container {
+    margin: 0;
+    margin-left: 30px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: none;
+    backdrop-filter: none;
+    border-radius: 0;
+    height: 46px;
+    /* Match button height */
+}
+
+.switch {
+    --button-width: 3.5em;
+    --button-height: 2em;
+    --toggle-diameter: 1.5em;
+    --button-toggle-offset: calc((var(--button-height) - var(--toggle-diameter)) / 2);
+    --toggle-shadow-offset: 10px;
+    --toggle-wider: 3em;
+    --color-grey: #cccccc;
+    --color-green: #4296f4;
+}
+
+.slider {
+    display: inline-block;
+    width: var(--button-width);
+    height: var(--button-height);
+    background-color: var(--color-grey);
+    border-radius: calc(var(--button-height) / 2);
+    position: relative;
+    transition: 0.3s all ease-in-out;
+}
+
+.slider::after {
+    content: "";
+    display: inline-block;
+    width: var(--toggle-diameter);
+    height: var(--toggle-diameter);
+    background-color: #fff;
+    border-radius: calc(var(--toggle-diameter) / 2);
+    position: absolute;
+    top: var(--button-toggle-offset);
+    transform: translateX(var(--button-toggle-offset));
+    box-shadow: var(--toggle-shadow-offset) 0 calc(var(--toggle-shadow-offset) * 4) rgba(0, 0, 0, 0.1);
+    transition: 0.3s all ease-in-out;
+}
+
+.switch input[type="checkbox"]:checked+.slider {
+    background-color: var(--color-green);
+}
+
+.switch input[type="checkbox"]:checked+.slider::after {
+    transform: translateX(calc(var(--button-width) - var(--toggle-diameter) - var(--button-toggle-offset)));
+    box-shadow: calc(var(--toggle-shadow-offset) * -1) 0 calc(var(--toggle-shadow-offset) * 4) rgba(0, 0, 0, 0.1);
+}
+
+.switch input[type="checkbox"] {
+    display: none;
+}
+
+.switch input[type="checkbox"]:active+.slider::after {
+    width: var(--toggle-wider);
+}
+
+.switch input[type="checkbox"]:checked:active+.slider::after {
+    transform: translateX(calc(var(--button-width) - var(--toggle-wider) - var(--button-toggle-offset)));
+}
+
+.toggle-labels {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.toggle-label-text {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #185a9d;
+    font-family: 'Hylia Serif Beta', 'Segoe UI', Arial, sans-serif;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.toggle-label-text:hover {
+    color: #43cea2;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .container {
+        width: 71.25%;
+        height: 63.75vh;
+        max-height: 63.75vh;
+        padding: 1.125rem;
+    }
+
+    .container.expanded {
+        width: 95%;
+        height: 85vh;
+        max-height: 85vh;
+        padding: 1.5rem;
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: 0.5rem;
+        /* Removed padding to match output section alignment */
+    }
+
+    .query-input,
+    .metric-select {
+        flex: none;
+        width: 100%;
+    }
+
+    .button-row {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: stretch;
+        /* Removed padding to match output section alignment */
+    }
+
+    .view-toggle-container {
+        width: 100%;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .switch {
+        --button-width: 3em;
+        --button-height: 1.8em;
+        --toggle-diameter: 1.3em;
+    }
+
+    .toggle-label-text {
+        font-size: 12px;
+    }
+}
+
+/* Focus states for accessibility */
+.switch:focus-within .slider {
+    outline: 2px solid #43cea2;
+    outline-offset: 2px;
+}
+
+.toggle-label-text:focus {
+    outline: 2px solid #43cea2;
+    outline-offset: 1px;
 }

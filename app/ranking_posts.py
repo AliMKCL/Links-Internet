@@ -122,3 +122,4 @@ def format_post_content(content):
         if len(content) > 1000:
             return content[:1000] + "..."
         return content
+

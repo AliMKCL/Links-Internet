@@ -10,14 +10,20 @@ from app.ranking_posts import ai_rank_posts, score_post, format_post_content
 # from app.pushshift_scraper import search_pushshift
 from app.database import embed_text, query_db, delete_collection
 import threading
-from app.utilities import enhance_post_content_for_html, query_classification
+from app.utilities import enhance_post_content_for_html, question_statement_classification, post_summary_generation
 import re
 
 
 app = FastAPI(title="Reddit Gaming Advisor")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.mount("/fonts", StaticFiles(directory="fonts"), name="fonts")
 app.mount("/templates", StaticFiles(directory="app/templates"), name="templates")
 templates = Jinja2Templates(directory="app/templates")
+
+# Global variables for caching posts between endpoints
+# In production, use proper session management or Redis
+cached_posts = []
+cached_query = ""
 
 
 # Root endpoint to serve the HTML template
@@ -33,7 +39,7 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
 
 
     initial_query = q
-    print(query_classification(q))  # Print the classification result for debugging
+    print(question_statement_classification(q))  # Print the classification result for debugging
     
     # First, check if relevant posts exist in the database
     try:
@@ -74,7 +80,7 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
             shared = {} # Dictionaries are mutable --> Shared between threads
 
             def fetch_ddg():
-                subreddit = "botw"
+                subreddit = "Breath_of_the_Wild"
                 try:
                     posts, clean_query = reddit_query_via_ddg(q, max_posts=200, metric=metric, subreddit=subreddit)
                     results['ddg'] = posts
@@ -84,7 +90,7 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
                     results['ddg'] = []
                     
             def fetch_reddit():
-                subreddit = "botw"
+                subreddit = "Breath_of_the_Wild"
                 try:
                     posts, clean_query = search_reddit(q, limit=200, metric=metric, subreddit=subreddit)
                     results['reddit'] = posts
@@ -127,6 +133,8 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
                     all_posts_dict[url] = post  # Overwrites duplicates, keeps highest scored occurrence.
             all_posts = list(all_posts_dict.values())   # A list of all unique post values
 
+            #clean_comments(all_posts)
+
             embed_text(all_posts)
             print("Embedded all posts. Now querying database for results...")
             
@@ -159,7 +167,7 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
         shared = {}
 
         def fetch_ddg():
-            subreddit = "botw"
+            subreddit = "Breath_of_the_Wild"
             try:
                 posts, clean_query = reddit_query_via_ddg(q, max_posts=200, metric=metric, subreddit=subreddit)
                 results['ddg'] = posts
@@ -169,7 +177,7 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
                 results['ddg'] = []
                 
         def fetch_reddit():
-            subreddit = "botw"
+            subreddit = "Breath_of_the_Wild"
             try:
                 posts, clean_query = search_reddit(q, limit=200, metric=metric, subreddit=subreddit)
                 results['reddit'] = posts
@@ -227,7 +235,11 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
         
         database_message = "Found in the database (newly added)"
 
-
+    # Store posts in a global variable for the summary endpoint
+    # In production, you'd use a proper cache like Redis
+    global cached_posts, cached_query
+    cached_posts = all_posts
+    cached_query = q
 
     # Up to here: Fetched and collected under all_posts
 
@@ -265,7 +277,9 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
         subreddit = post.get('subreddit', 'unknown')
         print(f"Subreddit: {subreddit}")
         print(f"{post['title']} [Score: {post['_score']:.2f}]")
+        #question_statement_classification(post["title"])
 
+    """"""
     # Use AI to rank the top x scored posts based on the query (skip if from database)
     if database_message in ["Found in the database", "Found in the database (newly added)"]:
         ai_ranked_posts = ranked_posts[:10]  # Just use top 10 database results
@@ -274,11 +288,12 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
         ai_ranked_posts = ai_rank_posts(ranked_posts[:20], initial_query)
 
         # Print scores for debugging
-        print("\nAI RANKED POSTS WITH SCORES:")
+        print("\nAI RANKED POSTS WITH SCORES:\n")
         for post in ai_ranked_posts:
             subreddit = post.get('subreddit', 'unknown')
             print(f"Subreddit: {subreddit}")
             print(f"{post['title']} [Score: {post['_score']:.2f}]")
+            
 
     # Skip subreddit grouping - just use the AI-ranked posts in score order
     ai_ranked_posts_sorted = ai_ranked_posts  # Posts are already sorted by score from AI ranking or database query
@@ -322,5 +337,32 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
 
     return {
         "query": q,
-        "results": summarized_results
+        "results": summarized_results,
+        "has_summary": True  # Indicates summary is available via separate endpoint
     }
+
+
+# New endpoint for AI summary generation
+@app.get("/summary")
+def get_summary(q: str = Query(..., description="Original query for summary generation")):
+    """Generate AI summary for the cached posts from the previous query"""
+    try:
+        # Access cached posts (in production, use proper session management)
+        global cached_posts, cached_query
+        
+        if not cached_posts or cached_query != q:
+            return {"error": "No cached posts found for this query. Please run /query first."}
+        
+        print(f"Generating summary for {len(cached_posts)} posts...")
+        ai_summary = post_summary_generation(cached_posts, q)
+        print("Summary generated successfully")
+        
+        return {
+            "query": q,
+            "ai_summary": ai_summary,
+            "post_count": len(cached_posts)
+        }
+        
+    except Exception as e:
+        print(f"Error generating summary: {e}")
+        return {"error": f"Failed to generate summary: {str(e)}"}

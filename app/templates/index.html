@@ -3,82 +3,242 @@
 
 <head>
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reddit Gaming Advisor</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <link rel="stylesheet" href="/static/index.css">
 </head>
 
 <body>
     <div class="container">
         <h1>Reddit Gaming Advisor</h1>
-        <input type="text" id="query" placeholder="Ask a gaming question..."
-            style="width:100%;margin-bottom:1rem;padding:0.75rem;border-radius:8px;border:1px solid #43cea2;font-size:1.1rem;">
-        <select id="metric"
-            style="width:100%;margin-bottom:1rem;padding:0.75rem;border-radius:8px;border:1px solid #43cea2;font-size:1.1rem;">
-            <option value="all">All Time</option>
-            <option value="year">Last Year</option>
-            <option value="month">Last Month</option>
-        </select>
-        <button onclick="submitQuery()">Submit</button>
-        <div id="output"></div>
+        <div class="form-row">
+            <input type="text" id="query" class="query-input" placeholder="Ask a gaming question...">
+            <select id="metric" class="metric-select">
+                <option value="all">All Time</option>
+                <option value="year">Last Year</option>
+                <option value="month">Last Month</option>
+            </select>
+        </div>
+        <div class="button-row">
+            <button onclick="submitQuery()">Submit</button>
+            <div id="viewToggleContainer" class="view-toggle-container" style="display: none;">
+                <div class="toggle-labels">
+                    <span class="toggle-label-text posts" id="postsLabel" onclick="switchToPostsView()">Posts</span>
+                    <label class="switch">
+                        <input type="checkbox" id="viewToggleSwitch" onchange="toggleView()">
+                        <span class="slider"></span>
+                    </label>
+                    <span class="toggle-label-text summary" id="summaryLabel"
+                        onclick="switchToSummaryView()">Summary</span>
+                </div>
+            </div>
+        </div>
+        <div id="output">
+            <img src="/static/ocarina_link_nobg.png" , class="ocarina_link">
+        </div>
     </div>
     <script>
         async function submitQuery() {
             const query = document.getElementById('query').value;
             const metric = document.getElementById('metric').value;
             const outputDiv = document.getElementById('output');
-            outputDiv.textContent = 'Loading...';
+            const container = document.querySelector('.container');
+
+            // Expand the container when submit is pressed
+            container.classList.add('expanded');
+
+            outputDiv.textContent = '⚡ Link is searching Hyrule... 🗡️';
+
             try {
+                // First, fetch posts immediately
                 const response = await fetch(`/query?q=${encodeURIComponent(query)}&metric=${encodeURIComponent(metric)}`);
                 if (!response.ok) {
                     outputDiv.textContent = 'Error: ' + response.statusText;
                     return;
                 }
                 const data = await response.json();
+
                 if (data.results && data.results.length > 0) {
-                    outputDiv.innerHTML = data.results.map((r, idx) => {
-                        const contentId = `post-content-${idx}`;
-                        const commentsId = `post-comments-${idx}`;
-                        const contentButtonId = `toggle-content-btn-${idx}`;
-                        const commentsButtonId = `toggle-comments-btn-${idx}`;
+                    // Store data globally for switching
+                    window.currentData = data;
 
-                        const contentSection = r.content ? `<button id="${contentButtonId}" onclick="toggleContent('${contentId}', '${contentButtonId}')" class="content-button">See content</button>` : '';
-
-                        const commentsSection = r.comments ? `<button id="${commentsButtonId}" onclick="toggleContent('${commentsId}', '${commentsButtonId}')" class="comments-button">See comments</button>` : '';
-
-                        const contentDiv = r.content ? `<div id="${contentId}" class="content-section" style="display:none;">${r.content}</div>` : '';
-
-                        const commentsDiv = r.comments ? `<div id="${commentsId}" class="comments-section" style="display:none;">${r.comments}</div>` : '';
-
-                        const subredditSection = r.subreddit ? `<span style='color:#43cea2;font-weight:bold;'>r/${r.subreddit}</span><br>` : '';
-                        return `<div class="post-item">${subredditSection}<a href="${r.url}" target="_blank" style="color:#185a9d;font-weight:bold;text-decoration:none;">${r.title}</a><br><div class="post-buttons-container"><div class="post-buttons">${contentSection}${commentsSection}</div></div>${contentDiv}${commentsDiv}<span>${r.summary}</span></div>`;
-                    }).join('');
-
-                    // Add toggleContent function
-                    window.toggleContent = function (contentId, buttonId) {
-                        const contentDiv = document.getElementById(contentId);
-                        const button = document.getElementById(buttonId);
-                        if (contentDiv.style.display === 'none') {
-                            contentDiv.style.display = 'block';
-                            if (buttonId.includes('content')) {
-                                button.textContent = 'Hide content';
-                            } else if (buttonId.includes('comments')) {
-                                button.textContent = 'Hide comments';
-                            }
-                        } else {
-                            contentDiv.style.display = 'none';
-                            if (buttonId.includes('content')) {
-                                button.textContent = 'See content';
-                            } else if (buttonId.includes('comments')) {
-                                button.textContent = 'See comments';
-                            }
-                        }
+                    // Show toggle controls immediately (summary will load later)
+                    if (data.has_summary) {
+                        showToggleControls();
+                        // Start loading summary in background
+                        loadSummary(query);
                     }
+
+                    // Default to showing posts immediately
+                    displayPosts(data);
                 } else {
                     outputDiv.textContent = 'No results found.';
                 }
             } catch (e) {
                 outputDiv.textContent = 'Error: ' + e;
+            }
+        }
+
+        async function loadSummary(query) {
+            try {
+                console.log('Loading summary for query:', query);
+                const summaryResponse = await fetch(`/summary?q=${encodeURIComponent(query)}`);
+                if (summaryResponse.ok) {
+                    const summaryData = await summaryResponse.json();
+                    if (summaryData.ai_summary) {
+                        // Add summary to current data
+                        window.currentData.ai_summary = summaryData.ai_summary;
+                        console.log('Summary loaded successfully');
+
+                        // Update summary view if user is currently viewing it
+                        const toggleSwitch = document.getElementById('viewToggleSwitch');
+                        if (toggleSwitch && toggleSwitch.classList.contains('active')) {
+                            displaySummary(window.currentData);
+                        }
+                    }
+                } else {
+                    console.error('Failed to load summary:', summaryResponse.statusText);
+                }
+            } catch (e) {
+                console.error('Error loading summary:', e);
+            }
+        }
+
+
+        function showToggleControls() {
+            const existingToggle = document.getElementById('viewToggleContainer');
+            if (existingToggle) {
+                existingToggle.style.display = 'flex';
+            }
+        }
+
+        function toggleView() {
+            const toggleSwitch = document.getElementById('viewToggleSwitch');
+
+            if (toggleSwitch.checked) {
+                // Switch to summary view
+                switchToSummaryView();
+            } else {
+                // Switch to posts view
+                switchToPostsView();
+            }
+        }
+
+        // Add keyboard support for toggle switch
+        document.addEventListener('DOMContentLoaded', function () {
+            document.addEventListener('keydown', function (event) {
+                const toggleSwitch = document.getElementById('viewToggleSwitch');
+                if (toggleSwitch && document.activeElement === toggleSwitch) {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        toggleView();
+                    }
+                }
+            });
+        });
+
+        function switchToPostsView() {
+            const toggleSwitch = document.getElementById('viewToggleSwitch');
+            const postsLabel = document.getElementById('postsLabel');
+            const summaryLabel = document.getElementById('summaryLabel');
+
+            // Update UI state
+            toggleSwitch.checked = false;
+            postsLabel.style.color = '#185a9d';
+            postsLabel.style.fontWeight = '700';
+            summaryLabel.style.color = '#666';
+            summaryLabel.style.fontWeight = '600';
+
+            // Display posts
+            if (window.currentData) {
+                displayPosts(window.currentData);
+            }
+        }
+
+        function switchToSummaryView() {
+            const toggleSwitch = document.getElementById('viewToggleSwitch');
+            const postsLabel = document.getElementById('postsLabel');
+            const summaryLabel = document.getElementById('summaryLabel');
+
+            // Update UI state
+            toggleSwitch.checked = true;
+            postsLabel.style.color = '#666';
+            postsLabel.style.fontWeight = '600';
+            summaryLabel.style.color = '#185a9d';
+            summaryLabel.style.fontWeight = '700';
+
+            // Display summary or loading message
+            if (window.currentData && window.currentData.ai_summary) {
+                displaySummary(window.currentData);
+            } else {
+                // Show loading message while summary is being generated
+                const outputDiv = document.getElementById('output');
+                outputDiv.innerHTML = `
+                    <div style="background:#f0f8ff;padding:20px;border-radius:10px;border-left:4px solid #43cea2;border-top:2px solid rgba(255,215,0,0.3);">
+                        <h3 style="color:#185a9d;margin-top:0;margin-bottom:15px;">⚡ Zelda's Wisdom</h3>
+                        <div style="line-height:1.6;color:#666;font-size:1.05em;text-align:center;">
+                            🔮 The sages are contemplating your question...<br>
+                            <span style="font-size:0.9em;">This may take a moment</span>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function displaySummary(data) {
+            const outputDiv = document.getElementById('output');
+            outputDiv.innerHTML = `
+                <div style="background:#f0f8ff;padding:20px;border-radius:10px;border-left:4px solid #43cea2;">
+                   
+                    <div style="line-height:1.8;color:#222;font-size:1.05em;">${data.ai_summary}</div>
+                </div>
+                <div style="margin-top:15px;text-align:center;font-size:0.9em;color:#666;">
+                    Generated from ${data.results.length} Reddit posts
+                </div>
+            `;
+        }
+
+        function displayPosts(data) {
+            const outputDiv = document.getElementById('output');
+            outputDiv.innerHTML = data.results.map((r, idx) => {
+                const contentId = `post-content-${idx}`;
+                const commentsId = `post-comments-${idx}`;
+                const contentButtonId = `toggle-content-btn-${idx}`;
+                const commentsButtonId = `toggle-comments-btn-${idx}`;
+
+                const contentSection = r.content ? `<button id="${contentButtonId}" onclick="toggleContent('${contentId}', '${contentButtonId}')" class="content-button">See content</button>` : '';
+
+                const commentsSection = r.comments ? `<button id="${commentsButtonId}" onclick="toggleContent('${commentsId}', '${commentsButtonId}')" class="comments-button">See comments</button>` : '';
+
+                const contentDiv = r.content ? `<div id="${contentId}" class="content-section" style="display:none;">${r.content}</div>` : '';
+
+                const commentsDiv = r.comments ? `<div id="${commentsId}" class="comments-section" style="display:none;">${r.comments}</div>` : '';
+
+                const subredditSection = r.subreddit ? `<span style='color:#43cea2;font-weight:bold;'>r/${r.subreddit}</span><br>` : '';
+                return `<div class="post-item">${subredditSection}<a href="${r.url}" target="_blank" style="color:#185a9d;font-weight:bold;text-decoration:none;">${r.title}</a><br><div class="post-buttons-container"><div class="post-buttons">${contentSection}${commentsSection}</div></div>${contentDiv}${commentsDiv}<span>${r.summary}</span></div>`;
+            }).join('');
+
+            // Add toggleContent function
+            window.toggleContent = function (contentId, buttonId) {
+                const contentDiv = document.getElementById(contentId);
+                const button = document.getElementById(buttonId);
+                if (contentDiv.style.display === 'none') {
+                    contentDiv.style.display = 'block';
+                    if (buttonId.includes('content')) {
+                        button.textContent = 'Hide content';
+                    } else if (buttonId.includes('comments')) {
+                        button.textContent = 'Hide comments';
+                    }
+                } else {
+                    contentDiv.style.display = 'none';
+                    if (buttonId.includes('content')) {
+                        button.textContent = 'See content';
+                    } else if (buttonId.includes('comments')) {
+                        button.textContent = 'See comments';
+                    }
+                }
             }
         }
     </script>
