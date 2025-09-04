@@ -41,17 +41,18 @@ def search_reddit(query: str, limit: int = 50, metric: str = "all", subreddit: s
     else:
         time_filter = "all"  # fallback
 
+    
     # Determine fetch limits based on number of subreddits
     if len(subreddits) == 1:
         # If there's 1 subreddit, fetch 100 posts
         limits = [100]
     elif len(subreddits) == 2:
-        # If there are 2 subreddits, fetch 50 from 1st, 20 from 2nd
-        limits = [50, 20]
+        # If there are 2 subreddits, fetch 100 from 1st, 100 from 2nd
+        limits = [100, 100]
     else:
-        # If there are 3 subreddits, fetch 50 from 1st, 20 from 2nd, 5 from 3rd
-        limits = [50, 20, 5]
-    
+        # If there are 3 subreddits, fetch 100 from 1st, 100 from 2nd, 100 from 3rd
+        limits = [100, 100, 100]
+
     #print(f"[PRAW] Fetching from {len(subreddits)} subreddits: {subreddits}")
     #print(f"[PRAW] Using fetch limits: {limits}")
 

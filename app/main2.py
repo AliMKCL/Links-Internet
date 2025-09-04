@@ -25,6 +25,32 @@ templates = Jinja2Templates(directory="app/templates")
 cached_posts = []
 cached_query = ""
 
+def detect_game_from_query(query: str) -> str:
+    """
+    Detect which game the query is about based on game names/abbreviations in the query.
+    Returns the game abbreviation (BOTW, TOTK, etc.) or None if no game detected.
+    """
+    query_lower = query.lower()
+    
+    # Game detection mappings
+    game_detection = {
+        'BOTW': ['botw', 'breath of the wild'],
+        'TOTK': ['totk', 'tears of the kingdom'],
+        'TP': ['tp', 'twilight princess'],
+        'SS': ['ss', 'skyward sword'],
+        'MM': ['mm', 'majoras mask', "majora's mask"],
+        'OOT': ['oot', 'ocarina of time'],
+        'WW': ['ww', 'wind waker'],
+    }
+    
+    for game_abbrev, terms in game_detection.items():
+        for term in terms:
+            if term in query_lower:
+                print(f"Detected game {game_abbrev} from query term: {term}")
+                return game_abbrev
+    
+    return None
+
 
 # Root endpoint to serve the HTML template
 @app.get("/", response_class=HTMLResponse)
@@ -41,9 +67,12 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
     initial_query = q
     print(question_statement_classification(q))  # Print the classification result for debugging
     
+    # Detect which game the query is about
+    detected_game = detect_game_from_query(q)
+    
     # First, check if relevant posts exist in the database
     try:
-        db_documents, db_distances, db_metadatas = query_db(q, n_results=10)
+        db_documents, db_distances, db_metadatas = query_db(q, n_results=10, game_filter=detected_game)
         # Check if we have good matches (distance < 0.3 is generally considered a good match)
         good_matches = [doc for i, doc in enumerate(db_documents) if db_distances[i] < 0.5]
         
@@ -64,7 +93,8 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
                     "comments": db_metadatas[i].get("comments", "").split(" | ") if db_metadatas[i].get("comments") else [],  # Convert string back to list
                     "subreddit": db_metadatas[i].get("subreddit", "database"),
                     "_score": 1.0 - db_distances[i],  # Convert distance to score
-                    "created_utc": None
+                    "created_utc": db_metadatas[i].get("created_utc"),
+                    "game": db_metadatas[i].get("game")  # Include game metadata
                 }
                 all_posts.append(post)
             
@@ -80,7 +110,7 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
             shared = {} # Dictionaries are mutable --> Shared between threads
 
             def fetch_ddg():
-                subreddit = "Breath_of_the_Wild"
+                subreddit = "botw"
                 try:
                     posts, clean_query = reddit_query_via_ddg(q, max_posts=200, metric=metric, subreddit=subreddit)
                     results['ddg'] = posts
@@ -90,7 +120,7 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
                     results['ddg'] = []
                     
             def fetch_reddit():
-                subreddit = "Breath_of_the_Wild"
+                subreddit = "botw"
                 try:
                     posts, clean_query = search_reddit(q, limit=200, metric=metric, subreddit=subreddit)
                     results['reddit'] = posts
@@ -139,7 +169,7 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
             print("Embedded all posts. Now querying database for results...")
             
             # Query the database to get the newly embedded posts
-            db_documents, db_distances, db_metadatas = query_db(clean_query, n_results=10)
+            db_documents, db_distances, db_metadatas = query_db(clean_query, n_results=10, game_filter=detected_game)
             print("Database query results:", len(db_documents), "documents found")
             
             # Create post objects from database results for consistent formatting
@@ -152,7 +182,8 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
                     "comments": db_metadatas[i].get("comments", "").split(" | ") if db_metadatas[i].get("comments") else [],  # Convert string back to list
                     "subreddit": db_metadatas[i].get("subreddit", "database"),
                     "_score": 1.0 - db_distances[i],  # Convert distance to score (database similarity score)
-                    "created_utc": db_metadatas[i].get("created_utc")
+                    "created_utc": db_metadatas[i].get("created_utc"),
+                    "game": db_metadatas[i].get("game")  # Include game metadata
                 }
                 all_posts.append(post)
             
@@ -216,7 +247,7 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
         print("Embedded all posts. Now querying database for results...")
         
         # Query the database to get the newly embedded posts
-        db_documents, db_distances, db_metadatas = query_db(clean_query, n_results=10)
+        db_documents, db_distances, db_metadatas = query_db(clean_query, n_results=10, game_filter=detected_game)
         print("Database query results:", len(db_documents), "documents found")
         
         # Create post objects from database results for consistent formatting
@@ -229,7 +260,8 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
                 "comments": db_metadatas[i].get("comments", "").split(" | ") if db_metadatas[i].get("comments") else [],  # Convert string back to list
                 "subreddit": db_metadatas[i].get("subreddit", "database"),
                 "_score": 1.0 - db_distances[i],  # Convert distance to score (database similarity score)
-                "created_utc": db_metadatas[i].get("created_utc")
+                "created_utc": db_metadatas[i].get("created_utc"),
+                "game": db_metadatas[i].get("game")  # Include game metadata
             }
             all_posts.append(post)
         
@@ -325,7 +357,7 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
         """
         
         summarized_results.append({
-            "title": f"{title} [Score: {post['_score']:.2f}] [Date: {date_str}]",
+            "title": f"{title} [Date: {date_str}]", # [Score: {post['_score']:.2f}]
             "url": post["url"],
             "summary": "",  # No summary if ranking by title only
             "content": post_content,  # Formatted post content for all posts
@@ -338,7 +370,8 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
     return {
         "query": q,
         "results": summarized_results,
-        "has_summary": True  # Indicates summary is available via separate endpoint
+        "has_summary": True,  # Indicates summary is available via separate endpoint
+        "database_status": database_message  # Send database status to frontend
     }
 
 
@@ -366,3 +399,20 @@ def get_summary(q: str = Query(..., description="Original query for summary gene
     except Exception as e:
         print(f"Error generating summary: {e}")
         return {"error": f"Failed to generate summary: {str(e)}"}
+
+# New endpoint to check database status immediately
+@app.get("/check-db")
+def check_database(q: str = Query(..., description="Query to check in database")):
+    """Check if relevant posts exist in database without fetching new ones"""
+    try:
+        # Detect which game the query is about
+        detected_game = detect_game_from_query(q)
+        db_documents, db_distances, db_metadatas = query_db(q, n_results=10, game_filter=detected_game)
+        good_matches = [doc for i, doc in enumerate(db_documents) if db_distances[i] < 0.5]
+        
+        if good_matches and len(good_matches) >= 5:
+            return {"found_in_database": True, "message": "Found in the database"}
+        else:
+            return {"found_in_database": False, "message": "Relevant posts not found in database"}
+    except Exception as e:
+        return {"found_in_database": False, "message": "Database query failed"}

@@ -40,12 +40,53 @@ def embed_text(posts: list[dict]) -> None:
                 original_title = post["title"]
                 subreddit = post.get("subreddit", "unknown").lower()
                 
-                # Add "BOTW" to title if it's from BOTW-related subreddits and doesn't already contain it
+                # Define game mappings: subreddits -> (abbreviation, full_names_to_check)
+                game_mappings = {
+                    # Breath of the Wild
+                    'breath_of_the_wild': ('BOTW', ['botw', 'breath of the wild']),
+                    'botw': ('BOTW', ['botw', 'breath of the wild']),
+                    'breathofthewild': ('BOTW', ['botw', 'breath of the wild']),
+                    
+                    # Tears of the Kingdom
+                    'tears_of_the_kingdom': ('TOTK', ['totk', 'tears of the kingdom']),
+                    'totk': ('TOTK', ['totk', 'tears of the kingdom']),
+                    'tearsofthekingdom': ('TOTK', ['totk', 'tears of the kingdom']),
+                    
+                    # Twilight Princess
+                    'twilight_princess': ('TP', ['tp', 'twilight princess']),
+                    'twilightprincess': ('TP', ['tp', 'twilight princess']),
+                    
+                    # Skyward Sword
+                    'skyward_sword': ('SS', ['ss', 'skyward sword']),
+                    'skywardsword': ('SS', ['ss', 'skyward sword']),
+                    
+                    # Majora's Mask
+                    'majoras_mask': ('MM', ['mm', 'majoras mask', "majora's mask"]),
+                    'majorasmask': ('MM', ['mm', 'majoras mask', "majora's mask"]),
+                    
+                    # Ocarina of Time
+                    'ocarina_of_time': ('OOT', ['oot', 'ocarina of time']),
+                    'ocarinaoftime': ('OOT', ['oot', 'ocarina of time']),
+                    
+                    # Wind Waker
+                    'wind_waker': ('WW', ['ww', 'wind waker']),
+                    'windwaker': ('WW', ['ww', 'wind waker']),
+                }
+                
+                # Determine game metadata based on subreddit
+                game_metadata = None
+                if subreddit in game_mappings:
+                    game_metadata = game_mappings[subreddit][0]  # Use the abbreviation as game metadata
+                
+                # Add abbreviation of game to title if it's from a game-related subreddit and doesn't already contain it
                 title_for_embedding = original_title
-                if (subreddit in ['breath_of_the_wild', 'botw', 'breathofthewild'] and 
-                    not any(term in original_title.lower() for term in ['botw', 'breath of the wild'])):
-                    title_for_embedding = f"{original_title} BOTW"
-                    print(f"Enhanced title: '{original_title}' -> '{title_for_embedding}'")
+                if subreddit in game_mappings:
+                    abbreviation, terms_to_check = game_mappings[subreddit]
+                    # Check if any of the terms are already in the title (case insensitive)
+                    if not any(term in original_title.lower() for term in terms_to_check):
+                        #title_for_embedding = f"{original_title} {abbreviation}"
+                        title_for_embedding = f"{original_title} {game_mappings[subreddit][1][1]}"
+                        print(f"Enhanced title: '{original_title}' -> '{title_for_embedding}'")
 
                 content = post.get("content", "")
                 if content and len(content) > 1000:
@@ -67,19 +108,27 @@ def embed_text(posts: list[dict]) -> None:
                         "score": post.get("_score", 0),
                         "original_title": original_title,  # Store original title for display
                         "comments": comments_str,  # Store comments as string
+                        "created_utc": post.get("created_utc"),  # Store creation timestamp
+                        "game": game_metadata,  # Store game metadata for filtering
                     }]
                 )
                     
         except Exception as e:
             print(f"Error embedding post {post.get('title', 'unknown')}: {e}")
 
-def query_db(query:str, n_results:int=10):
-
+def query_db(query: str, n_results: int = 10, game_filter: str = None):
     query_embeddings = openai_ef(query)
+
+    # Build where clause for game filtering
+    where_clause = None
+    if game_filter:
+        where_clause = {"game": game_filter}
+        print(f"Filtering results for game: {game_filter}")
 
     results = collection.query(
         query_embeddings=query_embeddings,
-        n_results=n_results
+        n_results=n_results,
+        where=where_clause
     )
 
     return results["documents"][0], results["distances"][0], results["metadatas"][0]

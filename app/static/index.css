@@ -381,7 +381,8 @@ button:hover,
 .post-item {
     margin-bottom: 80px;
     /* Reduced from 0.5em to 0.025em (half the size) */
-    border-bottom: 1px solid #eee;
+    /* border-bottom: 1px solid #eee; */
+    /* Removed for sleek look */
     padding-bottom: 0.5em;
     padding-top: 0.025em;
     /* Increased bottom padding to accommodate content */

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Link's Advisor</title>
+    <title>Link's Internet</title>
     <link rel="stylesheet" href="/static/index.css">
 </head>
 
@@ -38,8 +38,7 @@
             <img src="/static/ocarina_link_nobg.png" , class="ocarina_link">
         </div>
     </div>
-    <script>
-        async function submitQuery() {
+    <script>        async function submitQuery() {
             const query = document.getElementById('query').value;
             const metric = document.getElementById('metric').value;
             const outputDiv = document.getElementById('output');
@@ -48,10 +47,30 @@
             // Expand the container when submit is pressed
             container.classList.add('expanded');
 
-            outputDiv.textContent = 'Asking the sages . . .';
+            outputDiv.innerHTML = `
+                <div style="text-align:center;color:#185a9d;font-size:1.05rem;line-height:1.6;">
+                    Consulting the great sages...
+                </div>
+            `;
 
             try {
-                // First, fetch posts immediately
+                // First, check if posts exist in database
+                const checkResponse = await fetch(`/check-db?q=${encodeURIComponent(query)}`);
+                const checkData = await checkResponse.json();
+
+                // If not found in database, show the additional message immediately
+                if (!checkData.found_in_database) {
+                    outputDiv.innerHTML = `
+                        <div style="text-align:center;color:#185a9d;font-size:1.05rem;line-height:1.6;">
+                            Consulting the great sages...<br>
+                            <div style="color:#185a9d;font-size:1.05rem;margin-top:8px;">
+                                Relevant posts not found in the database, this might take a moment
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Now fetch the actual results
                 const response = await fetch(`/query?q=${encodeURIComponent(query)}&metric=${encodeURIComponent(metric)}`);
                 if (!response.ok) {
                     outputDiv.textContent = 'Error: ' + response.statusText;
@@ -93,7 +112,8 @@
 
                         // Update summary view if user is currently viewing it
                         const toggleSwitch = document.getElementById('viewToggleSwitch');
-                        if (toggleSwitch && toggleSwitch.classList.contains('active')) {
+                        if (toggleSwitch && toggleSwitch.checked) {
+                            // User is on summary view, refresh it with the new summary
                             displaySummary(window.currentData);
                         }
                     }
@@ -176,9 +196,10 @@
                 const outputDiv = document.getElementById('output');
                 outputDiv.innerHTML = `
                     <div style="background:#f0f8ff;padding:20px;border-radius:10px;border-left:4px solid #43cea2;border-top:2px solid rgba(255,215,0,0.3);">
-                        <h3 style="color:#185a9d;margin-top:0;margin-bottom:15px;">⚡ Zelda's Wisdom</h3>
+                        <!--
+                        <h3 style="color:#185a9d;margin-top:0;margin-bottom:15px;">⚡ Zelda's Wisdom</h3>-->
                         <div style="line-height:1.6;color:#666;font-size:1.05em;text-align:center;">
-                            🔮 The sages are contemplating your question...<br>
+                            The sages are providing the answer...<br>
                             <span style="font-size:0.9em;">This may take a moment</span>
                         </div>
                     </div>
