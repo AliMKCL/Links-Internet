@@ -100,9 +100,15 @@ h1 {
     display: flex;
     gap: 1rem;
     align-items: center;
+    justify-content: center;
     margin-bottom: 1rem;
     flex-shrink: 0;
     /* Removed padding to match output section alignment */
+}
+
+/* Center button row when expanded */
+.container.expanded .button-row {
+    justify-content: center;
 }
 
 .submit-button {

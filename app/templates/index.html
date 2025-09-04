@@ -5,16 +5,15 @@
     <meta charset="UTF-8">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reddit Gaming Advisor</title>
-    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <title>Link's Advisor</title>
     <link rel="stylesheet" href="/static/index.css">
 </head>
 
 <body>
     <div class="container">
-        <h1>Reddit Gaming Advisor</h1>
+        <h1>Link's Internet</h1>
         <div class="form-row">
-            <input type="text" id="query" class="query-input" placeholder="Ask a gaming question...">
+            <input type="text" id="query" class="query-input" placeholder="What does Link want to know...">
             <select id="metric" class="metric-select">
                 <option value="all">All Time</option>
                 <option value="year">Last Year</option>
@@ -49,7 +48,7 @@
             // Expand the container when submit is pressed
             container.classList.add('expanded');
 
-            outputDiv.textContent = '⚡ Link is searching Hyrule... 🗡️';
+            outputDiv.textContent = 'Asking the sages . . .';
 
             try {
                 // First, fetch posts immediately
