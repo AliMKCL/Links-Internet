@@ -12,6 +12,7 @@ from app.database import embed_text, query_db, delete_collection
 import threading
 from app.utilities import enhance_post_content_for_html, question_statement_classification, post_summary_generation
 import re
+from app.security import sanitize_input, validate_query_length, log_suspicious_query
 
 
 app = FastAPI(title="Reddit Gaming Advisor")
@@ -59,10 +60,34 @@ def root(request: Request):
 
 
 @app.get("/query")
-def query(q: str = Query(..., description="Gaming-related question"), metric: str = Query("all", description="Time filter for Reddit search")):
+def query(q: str = Query(..., max_length=512, description="Gaming-related question"), metric: str = Query("all", description="Time filter for Reddit search")):
     
     #delete_collection()  # For testing, remove later
 
+    # Basic security validation and sanitization
+    if not validate_query_length(q, 512):
+        log_suspicious_query(q, "Query exceeds maximum length")
+        return {
+            "query": q[:100] + "..." if len(q) > 100 else q,
+            "results": [],
+            "has_summary": False,
+            "database_status": "Invalid query",
+            "error": "Query is too long. Please keep your question under 512 characters."
+        }
+    
+    # Sanitize input to prevent injection and encoding attacks
+    original_query = q
+    q = sanitize_input(q)
+    
+    if not q or len(q.strip()) < 3:
+        log_suspicious_query(original_query, "Query too short or empty after sanitization")
+        return {
+            "query": original_query,
+            "results": [],
+            "has_summary": False,
+            "database_status": "Invalid query",
+            "error": "Please enter a valid question (at least 3 characters)."
+        }
 
     initial_query = q
     print(question_statement_classification(q))  # Print the classification result for debugging
@@ -398,9 +423,17 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
 
 # New endpoint for AI summary generation
 @app.get("/summary")
-def get_summary(q: str = Query(..., description="Original query for summary generation")):
+def get_summary(q: str = Query(..., max_length=512, description="Original query for summary generation")):
     """Generate AI summary for the cached posts from the previous query"""
     try:
+        # Basic security validation and sanitization
+        if not validate_query_length(q, 512):
+            return {"error": "Query too long"}
+        
+        q = sanitize_input(q)
+        if not q:
+            return {"error": "Invalid query"}
+        
         # Access cached posts (in production, use proper session management)
         global cached_posts, cached_query
         
@@ -423,9 +456,19 @@ def get_summary(q: str = Query(..., description="Original query for summary gene
 
 # New endpoint to check database status immediately
 @app.get("/check-db")
-def check_database(q: str = Query(..., description="Query to check in database")):
+def check_database(q: str = Query(..., max_length=512, description="Query to check in database")):
     """Check if relevant posts exist in database without fetching new ones"""
     try:
+        # Basic security validation and sanitization
+        if not validate_query_length(q, 512):
+            return {"found_in_database": False, "message": "Query too long"}
+        
+        original_query = q
+        q = sanitize_input(q)
+        if not q:
+            log_suspicious_query(original_query, "Empty query after sanitization")
+            return {"found_in_database": False, "message": "Invalid query"}
+        
         # Check if query is related to BOTW or TOTK only
         query_lower = q.lower()
         # Remove common punctuation to handle cases like "botw?" or "totk!"
