@@ -67,6 +67,27 @@ def query(q: str = Query(..., description="Gaming-related question"), metric: st
     initial_query = q
     print(question_statement_classification(q))  # Print the classification result for debugging
     
+    # Check if query is related to BOTW or TOTK only
+    query_lower = q.lower()
+    # Remove common punctuation to handle cases like "botw?" or "totk!"
+    import string
+    query_cleaned = query_lower.translate(str.maketrans('', '', string.punctuation))
+    
+    # Define allowed game terms (BOTW and TOTK only)
+    allowed_terms = ['botw', 'breath of the wild', 'totk', 'tears of the kingdom']
+    
+    # Check if any of the allowed terms are in the query
+    is_related_query = any(term in query_cleaned for term in allowed_terms)
+    
+    if not is_related_query:
+        return {
+            "query": q,
+            "results": [],
+            "has_summary": False,
+            "database_status": "Unrelated query",
+            "error": "This service only supports queries related to Breath of the Wild (BOTW) or Tears of the Kingdom (TOTK). Please ask a question about one of these games."
+        }
+    
     # Detect which game the query is about
     detected_game = detect_game_from_query(q)
     
@@ -405,6 +426,21 @@ def get_summary(q: str = Query(..., description="Original query for summary gene
 def check_database(q: str = Query(..., description="Query to check in database")):
     """Check if relevant posts exist in database without fetching new ones"""
     try:
+        # Check if query is related to BOTW or TOTK only
+        query_lower = q.lower()
+        # Remove common punctuation to handle cases like "botw?" or "totk!"
+        import string
+        query_cleaned = query_lower.translate(str.maketrans('', '', string.punctuation))
+        
+        # Define allowed game terms (BOTW and TOTK only)
+        allowed_terms = ['botw', 'breath of the wild', 'totk', 'tears of the kingdom']
+        
+        # Check if any of the allowed terms are in the query
+        is_related_query = any(term in query_cleaned for term in allowed_terms)
+        
+        if not is_related_query:
+            return {"found_in_database": False, "message": "Unrelated query"}
+        
         # Detect which game the query is about
         detected_game = detect_game_from_query(q)
         db_documents, db_distances, db_metadatas = query_db(q, n_results=10, game_filter=detected_game)

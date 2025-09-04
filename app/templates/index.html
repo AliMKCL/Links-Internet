@@ -58,6 +58,20 @@
                 const checkResponse = await fetch(`/check-db?q=${encodeURIComponent(query)}`);
                 const checkData = await checkResponse.json();
 
+                // If unrelated query, show message immediately
+                if (checkData.message === "Unrelated query") {
+                    outputDiv.innerHTML = `
+                        <div style="text-align:center;color:#d32f2f;font-size:1.1rem;line-height:1.6;padding:20px;background:#ffeaa7;border-radius:10px;border-left:4px solid #e17055;">
+                            <strong>Unrelated Query</strong><br>
+                            <div style="font-size:1rem;margin-top:10px;color:#2d3436;">
+                                This service only supports queries related to Breath of the Wild (BOTW) or Tears of the Kingdom (TOTK).<br>
+                                Please ask a question about one of these games.
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
                 // If not found in database, show the additional message immediately
                 if (!checkData.found_in_database) {
                     outputDiv.innerHTML = `
@@ -77,6 +91,19 @@
                     return;
                 }
                 const data = await response.json();
+
+                // Check for unrelated query error first
+                if (data.database_status === "Unrelated query" || data.error) {
+                    outputDiv.innerHTML = `
+                        <div style="text-align:center;color:#d32f2f;font-size:1.1rem;line-height:1.6;padding:20px;background:#ffeaa7;border-radius:10px;border-left:4px solid #e17055;">
+                            <strong>Unrelated Query</strong><br>
+                            <div style="font-size:1rem;margin-top:10px;color:#2d3436;">
+                                ${data.error || "This service only supports queries related to Breath of the Wild (BOTW) or Tears of the Kingdom (TOTK). Please ask a question about one of these games."}
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
 
                 if (data.results && data.results.length > 0) {
                     // Store data globally for switching
