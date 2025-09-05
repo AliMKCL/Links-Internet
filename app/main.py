@@ -60,7 +60,7 @@ def root(request: Request):
 
 
 @app.get("/query")
-def query(q: str = Query(..., max_length=512, description="Gaming-related question"), metric: str = Query("all", description="Time filter for Reddit search")):
+def query(q: str = Query(..., max_length=512, description="3D Zelda related question"), metric: str = Query("all", description="Time filter for Reddit search")):
     
     #delete_collection()  # For testing, remove later
 
@@ -156,7 +156,7 @@ def query(q: str = Query(..., max_length=512, description="Gaming-related questi
             shared = {} # Dictionaries are mutable --> Shared between threads
 
             def fetch_ddg():
-                subreddit = "botw"
+                subreddit = "tearsofthekingdom"
                 try:
                     posts, clean_query = reddit_query_via_ddg(q, max_posts=200, metric=metric, subreddit=subreddit)
                     results['ddg'] = posts
@@ -166,7 +166,7 @@ def query(q: str = Query(..., max_length=512, description="Gaming-related questi
                     results['ddg'] = []
                     
             def fetch_reddit():
-                subreddit = "botw"
+                subreddit = "tearsofthekingdom"
                 try:
                     posts, clean_query = search_reddit(q, limit=200, metric=metric, subreddit=subreddit)
                     results['reddit'] = posts

@@ -5,7 +5,7 @@ import openai
 
 from app.config import OPENAI_KEY_DB
 
-chroma_client = chromadb.PersistentClient("app/data/posts_db_v2")  # Use new database name
+chroma_client = chromadb.PersistentClient("app/data/posts_db")  # Use new database name
 
 openai_ef = embedding_functions.OpenAIEmbeddingFunction(
                 api_key=OPENAI_KEY_DB,
@@ -44,12 +44,12 @@ def embed_text(posts: list[dict]) -> None:
                 game_mappings = {
                     # Breath of the Wild
                     'breath_of_the_wild': ('BOTW', ['botw', 'breath of the wild']),
-                    'botw': ('BOTW', ['botw', 'breath of the wild']),
+                    'botw': ('BOTW', ['BOTW', 'breath of the wild']),
                     'breathofthewild': ('BOTW', ['botw', 'breath of the wild']),
                     
                     # Tears of the Kingdom
                     'tears_of_the_kingdom': ('TOTK', ['totk', 'tears of the kingdom']),
-                    'totk': ('TOTK', ['totk', 'tears of the kingdom']),
+                    'totk': ('TOTK', ['TOTK', 'tears of the kingdom']),
                     'tearsofthekingdom': ('TOTK', ['totk', 'tears of the kingdom']),
                     
                     # Twilight Princess
@@ -81,11 +81,11 @@ def embed_text(posts: list[dict]) -> None:
                 # Add abbreviation of game to title if it's from a game-related subreddit and doesn't already contain it
                 title_for_embedding = original_title
                 if subreddit in game_mappings:
+                    abbreviation_full = game_mappings[subreddit][1][1]
                     abbreviation, terms_to_check = game_mappings[subreddit]
                     # Check if any of the terms are already in the title (case insensitive)
                     if not any(term in original_title.lower() for term in terms_to_check):
-                        #title_for_embedding = f"{original_title} {abbreviation}"
-                        title_for_embedding = f"{original_title} {game_mappings[subreddit][1][1]}"
+                        title_for_embedding = f"{original_title} {abbreviation}"
                         print(f"Enhanced title: '{original_title}' -> '{title_for_embedding}'")
 
                 content = post.get("content", "")
@@ -117,7 +117,26 @@ def embed_text(posts: list[dict]) -> None:
             print(f"Error embedding post {post.get('title', 'unknown')}: {e}")
 
 def query_db(query: str, n_results: int = 10, game_filter: str = None):
-    query_embeddings = openai_ef(query)
+    # Normalize query so that mentions of full game names are converted / augmented with
+    # the same abbreviations used when embedding titles (ensures better vector matches).
+    query_lower = query.lower()
+    game_aliases = {
+        'botw': ['botw', 'breath of the wild'],
+        'totk': ['totk', 'tears of the kingdom']
+    }
+
+    # Build a query string for embedding that includes the abbreviation if a game term is present
+    query_for_embedding = query
+    for abbrev, aliases in game_aliases.items():
+        for alias in aliases:
+            if alias in query_lower:
+                # append uppercase abbreviation if not already present
+                if abbrev.upper() not in query and abbrev not in query_lower:
+                    query_for_embedding = f"{query_for_embedding} {abbrev.upper()}"
+                    print(f"Augmented query for embedding with game abbrev: {abbrev.upper()}")
+                break
+
+    query_embeddings = openai_ef(query_for_embedding)
 
     # Build where clause for game filtering
     where_clause = None
@@ -132,4 +151,3 @@ def query_db(query: str, n_results: int = 10, game_filter: str = None):
     )
 
     return results["documents"][0], results["distances"][0], results["metadatas"][0]
-
