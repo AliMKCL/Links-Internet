@@ -20,7 +20,7 @@
                 <option value="year">Last Year</option>
                 <option value="month">Last Month</option>
             </select> -->
-            <button onclick="submitQuery()" class="submit-button">Submit</button>
+            <button onclick="submitQuery()" class="submit-button">Search</button>
         </div>
         <div class="button-row">
             <div id="viewToggleContainer" class="view-toggle-container" style="display: none;">
@@ -158,6 +158,8 @@
             const existingToggle = document.getElementById('viewToggleContainer');
             if (existingToggle) {
                 existingToggle.style.display = 'flex';
+                // Always reset to posts view when new results are shown
+                switchToPostsView();
             }
         }
 

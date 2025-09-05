@@ -245,12 +245,12 @@ button:hover,
 }
 
 .ocarina_link {
-    height: 480px;
-    width: 480px;
+    height: 500px;
+    width: 500px;
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-58%, -20%);
+    transform: translate(-58%, -25%);
     z-index: 1;
     justify-content: center;
 }

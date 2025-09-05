@@ -51,26 +51,6 @@ def embed_text(posts: list[dict]) -> None:
                     'tears_of_the_kingdom': ('TOTK', ['totk', 'tears of the kingdom']),
                     'totk': ('TOTK', ['TOTK', 'tears of the kingdom']),
                     'tearsofthekingdom': ('TOTK', ['totk', 'tears of the kingdom']),
-                    
-                    # Twilight Princess
-                    'twilight_princess': ('TP', ['tp', 'twilight princess']),
-                    'twilightprincess': ('TP', ['tp', 'twilight princess']),
-                    
-                    # Skyward Sword
-                    'skyward_sword': ('SS', ['ss', 'skyward sword']),
-                    'skywardsword': ('SS', ['ss', 'skyward sword']),
-                    
-                    # Majora's Mask
-                    'majoras_mask': ('MM', ['mm', 'majoras mask', "majora's mask"]),
-                    'majorasmask': ('MM', ['mm', 'majoras mask', "majora's mask"]),
-                    
-                    # Ocarina of Time
-                    'ocarina_of_time': ('OOT', ['oot', 'ocarina of time']),
-                    'ocarinaoftime': ('OOT', ['oot', 'ocarina of time']),
-                    
-                    # Wind Waker
-                    'wind_waker': ('WW', ['ww', 'wind waker']),
-                    'windwaker': ('WW', ['ww', 'wind waker']),
                 }
                 
                 # Determine game metadata based on subreddit

@@ -37,11 +37,6 @@ def detect_game_from_query(query: str) -> str:
     game_detection = {
         'BOTW': ['botw', 'breath of the wild'],
         'TOTK': ['totk', 'tears of the kingdom'],
-        'TP': ['tp', 'twilight princess'],
-        'SS': ['ss', 'skyward sword'],
-        'MM': ['mm', 'majoras mask', "majora's mask"],
-        'OOT': ['oot', 'ocarina of time'],
-        'WW': ['ww', 'wind waker'],
     }
     
     for game_abbrev, terms in game_detection.items():
@@ -397,10 +392,6 @@ def query(q: str = Query(..., max_length=512, description="3D Zelda related ques
         
         # Add database message to the first result's title
         title = post['title']
-        """
-        if i == 0:
-            title = f'[{database_message}] {title}'
-        """
         
         summarized_results.append({
             "title": f"{title} [Date: {date_str}]", # [Score: {post['_score']:.2f}]

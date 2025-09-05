@@ -297,7 +297,7 @@ def post_summary_generation(posts, query):
         prompt += "If there are multiple useful answers or approaches, present them clearly. "
         prompt += "Be specific and cite information from the posts when relevant.\n\n"
         prompt += "Use a straightforward, informative tone. Avoid unnecessary fluff or filler. "
-        prompt += "Do NOT include responses in the end that shows its an LLM answering a query, just provide the answer and nothing more."
+        prompt += "Do NOT include any recommendations or suggestions coming from outside the posts (Like from an llm), just provide the answer and nothing more."
         prompt += "IMPORTANT: Format your response EXACTLY like this structure:\n\n"
         prompt += "**Short summary**\n"
         prompt += "[1-3 sentences directly answering the user's question with the most important information]\n\n"
