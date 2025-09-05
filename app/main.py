@@ -156,7 +156,7 @@ def query(q: str = Query(..., max_length=512, description="3D Zelda related ques
             shared = {} # Dictionaries are mutable --> Shared between threads
 
             def fetch_ddg():
-                subreddit = "tearsofthekingdom"
+                #subreddit = "botw"
                 try:
                     posts, clean_query = reddit_query_via_ddg(q, max_posts=200, metric=metric, subreddit=subreddit)
                     results['ddg'] = posts
@@ -166,7 +166,7 @@ def query(q: str = Query(..., max_length=512, description="3D Zelda related ques
                     results['ddg'] = []
                     
             def fetch_reddit():
-                subreddit = "tearsofthekingdom"
+                #subreddit = "botw"
                 try:
                     posts, clean_query = search_reddit(q, limit=200, metric=metric, subreddit=subreddit)
                     results['reddit'] = posts
@@ -244,7 +244,7 @@ def query(q: str = Query(..., max_length=512, description="3D Zelda related ques
         shared = {}
 
         def fetch_ddg():
-            subreddit = "Breath_of_the_Wild"
+            subreddit = "tearsofthekingdom"
             try:
                 posts, clean_query = reddit_query_via_ddg(q, max_posts=200, metric=metric, subreddit=subreddit)
                 results['ddg'] = posts
@@ -254,7 +254,7 @@ def query(q: str = Query(..., max_length=512, description="3D Zelda related ques
                 results['ddg'] = []
                 
         def fetch_reddit():
-            subreddit = "Breath_of_the_Wild"
+            subreddit = "tearsofthekingdom"
             try:
                 posts, clean_query = search_reddit(q, limit=200, metric=metric, subreddit=subreddit)
                 results['reddit'] = posts
