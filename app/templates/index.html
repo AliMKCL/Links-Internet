@@ -14,14 +14,15 @@
         <h1>Link's Internet</h1>
         <div class="form-row">
             <input type="text" id="query" class="query-input" placeholder="What does Link want to know...">
-            <select id="metric" class="metric-select">
+            <!--Used for metric selection while fetching. Now unnecessary since all games covered in this project are 2+ years old with no relevant continuous updates.-->
+            <!-- <select id="metric" class="metric-select">
                 <option value="all">All Time</option>
                 <option value="year">Last Year</option>
                 <option value="month">Last Month</option>
-            </select>
+            </select> -->
+            <button onclick="submitQuery()" class="submit-button">Submit</button>
         </div>
         <div class="button-row">
-            <button onclick="submitQuery()">Submit</button>
             <div id="viewToggleContainer" class="view-toggle-container" style="display: none;">
                 <div class="toggle-labels">
                     <span class="toggle-label-text posts" id="postsLabel" onclick="switchToPostsView()">Posts</span>
@@ -40,7 +41,7 @@
     </div>
     <script>        async function submitQuery() {
             const query = document.getElementById('query').value;
-            const metric = document.getElementById('metric').value;
+            const metric = 'all'; // Default to 'all' since metric selector is disabled
             const outputDiv = document.getElementById('output');
             const container = document.querySelector('.container');
 
