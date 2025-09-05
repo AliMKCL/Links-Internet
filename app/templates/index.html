@@ -55,8 +55,8 @@
             `;
 
             try {
-                // First, check if posts exist in database
-                const checkResponse = await fetch(`/check-db?q=${encodeURIComponent(query)}`);
+                // First, quickly check if posts need to be fetched
+                const checkResponse = await fetch(`/check-fetch-needed?q=${encodeURIComponent(query)}`);
                 const checkData = await checkResponse.json();
 
                 // If unrelated query, show message immediately
@@ -73,13 +73,13 @@
                     return;
                 }
 
-                // If not found in database, show the additional message immediately
-                if (!checkData.found_in_database) {
+                // If fetching is needed, show the additional message immediately
+                if (checkData.fetch_needed) {
                     outputDiv.innerHTML = `
                         <div style="text-align:center;color:#185a9d;font-size:1.05rem;line-height:1.6;">
                             Consulting the great sages...<br>
                             <div style="color:#185a9d;font-size:1.05rem;margin-top:8px;">
-                                Relevant posts not found in the database, this might take a moment
+                                No relevant posts found in the database, this might take a moment
                             </div>
                         </div>
                     `;

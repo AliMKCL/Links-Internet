@@ -1,4 +1,4 @@
-"""
+
 # Pushshift API Reddit search (via psaw)
 # This module provides functions to fetch Reddit posts using the Pushshift API for broader and more flexible search.
 
@@ -56,4 +56,3 @@ def search_pushshift(query: str,
 
 # Example usage:
 # posts = search_pushshift("1.61.38 balance changes", subreddits=["gaming"], limit=20, after=int(datetime(2024,1,1).timestamp()))
-"""

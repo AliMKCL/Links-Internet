@@ -11,39 +11,7 @@ reddit = praw.Reddit(
     client_secret=REDDIT_CLIENT_SECRET,
     user_agent=REDDIT_USER_AGENT
 )
-"""
-def get_reddit_post_ids_from_search(query: str, max_results: int = 50, metric: str = "all") -> List[str]:
-    post_ids = []
-    # Calculate time filter keywords using current date
-    now = datetime.datetime.utcnow()
-    time_keywords = ""
 
-    # Since ddg search doesn't support direct time filtering, we can add keywords to bias results
-    if metric == "month":
-        curr_month = now.strftime('%B')
-        curr_year = now.year
-        prev_month_dt = now.replace(day=1) - datetime.timedelta(days=1)
-        prev_month = prev_month_dt.strftime('%B')
-        #prev_year = prev_month_dt.year
-        time_keywords = f"{curr_year} {curr_month} OR {curr_year} {prev_month} OR last month OR recent"
-    elif metric == "year":
-        curr_year = now.year
-        prev_year = curr_year - 1
-        time_keywords = f"{curr_year} OR {prev_year} OR this year OR last year OR recent"
-    # For 'all', no extra keywords
-
-    ddg_query = f"{query} site:reddit.com"
-
-    if time_keywords:
-        ddg_query += f" {time_keywords}"
-    with DDGS() as ddgs:
-        results = ddgs.text(ddg_query, max_results=max_results)
-        for r in results:
-            match = re.search(r"reddit\.com/r/[^/]+/comments/([a-z0-9]{6,})", r["href"])
-            if match:
-                post_ids.append(match.group(1))
-    return post_ids
-"""
 def fetch_posts_by_ids(post_ids: List[str], max_comments: int = 50) -> List[Dict]:
     posts = []
     for pid in post_ids:

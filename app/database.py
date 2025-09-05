@@ -14,8 +14,11 @@ openai_ef = embedding_functions.OpenAIEmbeddingFunction(
 
 collection = chroma_client.get_or_create_collection(name="posts", embedding_function=openai_ef)
 
+# Delete existing collection to start fresh
 def delete_collection():
-    # TESTING, REMOVE LATER - Delete collection to start fresh with new embedding logic
+        
+        # Note: This will remove all existing data in the collection
+        # Use with caution in production environments
     try:
         chroma_client.delete_collection(name="posts")
         print("Deleted existing collection to start fresh with enhanced embedding")
@@ -82,14 +85,14 @@ def embed_text(posts: list[dict]) -> None:
                     ids=[post["url"]],  # Use URL as unique ID
                     embeddings=[openai_ef([title_for_embedding])[0]],
                     metadatas=[{
-                        "url": post["url"],
-                        "subreddit": post.get("subreddit", "unknown"),
-                        "content": post.get("content", ""),
-                        "score": post.get("_score", 0),
-                        "original_title": original_title,  # Store original title for display
-                        "comments": comments_str,  # Store comments as string
-                        "created_utc": post.get("created_utc"),  # Store creation timestamp
-                        "game": game_metadata,  # Store game metadata for filtering
+                        "url": post["url"],                             # url of post
+                        "subreddit": post.get("subreddit", "unknown"),  # subreddit the post comes from
+                        "content": post.get("content", ""),             # Content of the post
+                        "score": post.get("_score", 0),                 # Score of the post (the distance)
+                        "original_title": original_title,               # Title of the post
+                        "comments": comments_str,                       # Store comments as string
+                        "created_utc": post.get("created_utc"),         # Store post creation timestamo
+                        "game": game_metadata,                          # The game name related to the post
                     }]
                 )
                     

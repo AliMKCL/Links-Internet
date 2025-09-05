@@ -331,3 +331,22 @@ def post_summary_generation(posts, query):
         print(f"Error generating summary: {e}")
         return "Error generating summary."
     
+
+# Detect which game the query is about based on phrases in the query, returns the abbreviation of the game.
+def detect_game_from_query(query: str) -> str:
+
+    query_lower = query.lower()
+    
+    # if term (right) is in the query, return the game abbreviation (left)
+    game_detection = {
+        'BOTW': ['botw', 'breath of the wild'],
+        'TOTK': ['totk', 'tears of the kingdom'],
+    }
+    
+    for game_abbrev, terms in game_detection.items():
+        for term in terms:
+            if term in query_lower:
+                print(f"Detected game {game_abbrev} from query term: {term}")
+                return game_abbrev
+    
+    return None
