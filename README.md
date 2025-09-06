@@ -1,7 +1,7 @@
 Links Internet: 
 - A FastAPI-based web app that scrapes Reddit and web results, stores them in a vector database (Chroma), and uses OpenAI embeddings for retrieval-augmented search.
 - Expected reply times:
-   - Retrieval:2-3 seconds for the relevant posts (if they exist inside the database), 20-40 seconds for the summary of all posts
+   - Retrieval: 2-3 seconds for the relevant posts (if they exist inside the database), 20-40 seconds for the summary of all posts
    - Fetching: Depends on the query
 
 # Video link: 
