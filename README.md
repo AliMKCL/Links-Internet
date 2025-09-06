@@ -8,10 +8,10 @@ Links Internet — A FastAPI-based web app that scrapes Reddit and web results, 
 - Summarization for a collection of posts for conveniance
 
 # Tech Stack
-Backend: FastAPI, Uvicorn
-Data: PRAW (Reddit API), DuckDuckGo Search, ChromaDB
-ML/RAG: OpenAI embeddings for semantic ranking
-Frontend: HTML/CSS (Jinja templates)
+- Backend: FastAPI, Uvicorn
+- Data: PRAW (Reddit API), DuckDuckGo Search, ChromaDB
+- ML/RAG: OpenAI embeddings for semantic ranking
+- Frontend: HTML/CSS (Jinja templates)
 
 # Video link: 
 https://youtu.be/gH4BUbcch-8
