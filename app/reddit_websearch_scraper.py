@@ -11,7 +11,7 @@ reddit = praw.Reddit(
     client_secret=REDDIT_CLIENT_SECRET,
     user_agent=REDDIT_USER_AGENT
 )
-
+# Fetch reddit posts from reddit by their IDs
 def fetch_posts_by_ids(post_ids: List[str], max_comments: int = 50) -> List[Dict]:
     posts = []
     for pid in post_ids:
@@ -19,6 +19,7 @@ def fetch_posts_by_ids(post_ids: List[str], max_comments: int = 50) -> List[Dict
         comments = []
         try:
             submission = reddit.submission(id=pid)
+
             # Skip video posts
             if submission.is_video:
                 continue
@@ -50,16 +51,13 @@ def fetch_posts_by_ids(post_ids: List[str], max_comments: int = 50) -> List[Dict
             })
     return posts
 
+# Search Reddit posts via DuckDuckGo, with optional time filter bias (metric: 'all', 'year', 'month').
 def reddit_query_via_ddg(query: str, max_posts: int = 50, max_comments: int = 5, metric: str = "all", subreddit: str = None) -> List[Dict]:
-    """
-    Search Reddit posts via DuckDuckGo, with optional time filter bias (metric: 'all', 'year', 'month').
-    """
     post_ids, cleaned_query = get_reddit_post_ids_from_ai(query, max_results=max_posts, metric=metric, subreddit=subreddit)
-    #print("Post IDs: ", post_ids)   # Prints empty list
     posts = fetch_posts_by_ids(post_ids, max_comments=max_comments)
     return posts, cleaned_query
  
-
+# Uses AI to determine subreddits, then uses DuckDuckGo to find relevant Reddit post IDs
 def get_reddit_post_ids_from_ai(query: str, max_results: int = 50, metric: str = "all", subreddit: str = None) -> List[str]:
     
     if not subreddit:
@@ -93,33 +91,27 @@ def get_reddit_post_ids_from_ai(query: str, max_results: int = 50, metric: str =
         limits = [100]
     elif len(subreddits) == 2:
         # If there are 2 subreddits, fetch 50 from 1st, 30 from 2nd
-        limits = [50, 20]
+        limits = [50, 30]
     else:
-        # If there are 3 subreddits, fetch 50 from 1st, 20 from 2nd, 5 from 3rd
-        limits = [50, 20, 5]
+        # If there are 3 subreddits, fetch 100 from 1st, 50 from 2nd, 30 from 3rd
+        limits = [100, 50, 30]
     
-    #print(f"[DDG] Fetching from {len(subreddits)} subreddits: {subreddits}")
-    #print(f"[DDG] Using fetch limits: {limits}")
-    
+    # For each post id clean the query to pass into DDG
     for idx, subreddit in enumerate(subreddits):
         fetch_limit = limits[idx]
-        #print(f"[DDG] Subreddit {idx+1}/{len(subreddits)}: r/{subreddit} - fetching up to {fetch_limit} posts")
         if subreddit.startswith("r/"):
             subreddit = subreddit[2:]   # eliminate the leading 'r/' if present
         ddg_query = f"{cleaned_query} site:reddit.com/r/{subreddit}"
         if time_keywords:
             ddg_query += f" {time_keywords}"
-        #print(f"DDG Query: {ddg_query}")  # Debug: print the actual query sent to DDG
         
+        # Search DuckDuckGo for Reddit posts in the specified subreddit
         with DDGS() as ddgs:
             results = ddgs.text(ddg_query, max_results=fetch_limit)
-            #print(f"DDG Results: {results}")  # Debug: print all DDG results
             for r in results:
-                #print(f"DDG Result URL: {r['href']}")  # Debug: print each result URL
                 # More flexible regex that handles various Reddit URL formats
                 match = re.search(r"reddit\.com/r/[^/]+/comments/([a-zA-Z0-9_-]{5,})", r["href"])
                 if match:
-                    #print(f"Matched Post ID: {match.group(1)}")  # Debug: print matched post ID
                     post_ids.append(match.group(1))
                 else:
                     # Try alternative patterns for edge cases

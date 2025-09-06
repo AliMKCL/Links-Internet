@@ -3,7 +3,6 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from app.reddit_scraper import search_reddit
-from app.summarizer import summarize_comments
 from app.reddit_websearch_scraper import reddit_query_via_ddg
 from datetime import datetime
 from app.ranking_posts import ai_rank_posts, score_post, format_post_content

@@ -7,8 +7,8 @@ from app.config import OPENAI_KEY
 
 client = OpenAI(api_key=OPENAI_KEY)
 
-def enhance_post_content_for_html(content):
-    """Format post content for better HTML display, especially Reddit tables"""
+# Format post content for better HTML display, especially Reddit tables
+def enhance_post_content_for_html(content) -> str:
     if not content:
         return ""
         
@@ -158,11 +158,8 @@ def enhance_post_content_for_html(content):
     
     return content
 
-# Good response but no botw (abbreviations) as subreddits.
-def question_statement_classification(query: str) ->int:  
-    """
-    Classifies the query as a question or statement using a pre-trained model.
-    """
+# Classifies the query as a question or statement using a pre-trained model
+def question_statement_classification(query: str) -> int:
     
     tokenizer = AutoTokenizer.from_pretrained("shahrukhx01/question-vs-statement-classifier")
     model = AutoModelForSequenceClassification.from_pretrained("shahrukhx01/question-vs-statement-classifier")
@@ -182,55 +179,8 @@ def question_statement_classification(query: str) ->int:
         print("Query classified as a statement.")
         return 0  # Statement
 
-# Good maybe not exactly ideal response but catches botw (abbreviations) as subreddits
-def query_classificationNEW(query: str) -> int:    
-    """
-    Classifies the query as a question or statehment using a transformer model.
-    Returns 1 for question, 0 for statement.
-    """
-    try:
-        # Load a pre-trained model for sequence classification
-        tokenizer = AutoTokenizer.from_pretrained("distilbert-base-uncased")
-        model = AutoModelForSequenceClassification.from_pretrained("distilbert-base-uncased")
-        
-        # Create a text classification pipeline
-        pipe = pipeline("text-classification", model=model, tokenizer=tokenizer)
-        
-        # Classify the query
-        result = pipe(query)[0]
-        
-        # In this case, we're just checking if it's a question or not
-        # Assuming label "LABEL_1" is for questions and "LABEL_0" is for statements
-        if result["label"] == "LABEL_1":
-            print(f"Query classified as a question with confidence {result['score']:.4f}")
-            return 1
-        else:
-            print(f"Query classified as a statement with confidence {result['score']:.4f}")
-            return 0
-    except Exception as e:
-        print(f"Error in ML-based query classification: {e}")
-        # Fallback to rule-based approach
-        question_words = ["what", "who", "when", "where", "why", "how", "which", "can", "could", "would", "should", "is", "are", "do", "does"]
-        
-        # Clean the query
-        query_lower = query.lower().strip()
-        
-        # Check if it ends with a question mark
-        if query_lower.endswith("?"):
-            print("Query classified as a question (ends with ?).")
-            return 1
-        
-        # Check if it starts with a question word
-        for word in question_words:
-            if query_lower.startswith(word + " "):
-                print(f"Query classified as a question (starts with '{word}').")
-                return 1
-        
-        print("Query classified as a statement.")
-        return 0
-
-def markdown_to_html(text):
-    """Convert Markdown text to HTML with styling that matches the screenshot"""
+# Convert Markdown text to HTML
+def markdown_to_html(text) -> str:
     if not text:
         return ""
     
@@ -256,10 +206,8 @@ def markdown_to_html(text):
     
     return text
     
-def post_summary_generation(posts, query):
-    """
-    Generates a comprehensive answer based on all posts using OpenAI.
-    """
+# Generates a comprehensive answer to the user's query based on all posts using OpenAI
+def post_summary_generation(posts, query) -> str:
     try:
         # Build structured content from all posts
         all_posts_content = []

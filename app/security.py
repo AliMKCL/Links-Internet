@@ -1,8 +1,9 @@
-"""
-Minimal security utilities for input validation and sanitization.
-"""
 import re
 import unicodedata
+
+
+# This file introduces minimal security utilities for input validation and sanitization.
+
 
 # Sanitize input to prevent injection and encoding attacks
 def sanitize_input(text: str, max_length: int = 512) -> str:
