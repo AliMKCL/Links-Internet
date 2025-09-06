@@ -305,13 +305,6 @@ def query(q: str = Query(..., max_length=512, description="3D Zelda related ques
         if hasattr(post, "created_utc"):
             post["created_utc"] = post.created_utc
 
-    """
-    # Attach scores to each post if no score was given as a safety measure.
-    for post in all_posts:
-        if "_score" not in post: 
-            post["_score"] = score_post(post, q)
-    """
-
     # Sort by score, then by recency
     ranked_posts = sorted(
         all_posts,
@@ -329,6 +322,8 @@ def query(q: str = Query(..., max_length=512, description="3D Zelda related ques
 
     
     # Use AI to rank the top x scored posts based on the query (skip if posts are retrieved from the db)
+    # DEPRACATED, else statement never runs as fetched posts are always embedded and retrieved from the db.
+    # AI ranking does not affect anything but it exists in case the project scope changes in the future.
     if database_message in ["Found in the database", "Found in the database (newly added)"]:
         ai_ranked_posts = ranked_posts[:10]  # Just use top 10 database results
         print("Skipping AI ranking for database results")
@@ -341,6 +336,7 @@ def query(q: str = Query(..., max_length=512, description="3D Zelda related ques
             subreddit = post.get('subreddit', 'unknown')
             print(f"Subreddit: {subreddit}")
             print(f"{post['title']} [Score: {post['_score']:.2f}]")
+            
 
     final_posts = ai_ranked_posts
 
@@ -460,7 +456,4 @@ def check_fetch_needed(q: str = Query(..., max_length=512, description="Query to
             
     except Exception as e:
         return {"fetch_needed": True, "message": "Database check failed, will fetch posts"}
-
-
-
 

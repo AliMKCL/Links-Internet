@@ -1,6 +1,7 @@
-
 # Pushshift API Reddit search (via psaw)
 # This module provides functions to fetch Reddit posts using the Pushshift API for broader and more flexible search.
+
+# Not used throughout the project as the API is too unreliable, but kept for reference.
 
 from psaw import PushshiftAPI
 from datetime import datetime
@@ -16,6 +17,7 @@ reddit = praw.Reddit(
 )
 api = PushshiftAPI(reddit)
 
+# Scrape reddit via the pushshift API
 def search_pushshift(query: str, 
                      subreddits: Optional[List[str]] = None, 
                      limit: int = 50, 

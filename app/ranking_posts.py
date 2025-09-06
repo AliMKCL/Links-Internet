@@ -5,7 +5,7 @@ import re
 
 client = OpenAI(api_key=OPENAI_KEY)
 
-
+# Used for deciding which post to include if duplicate posts are received. (Not necessary anymore but exists)
 def score_post(post: dict, query: str) -> float:
     score = 0
     title = post.get("title", "").lower()
@@ -28,7 +28,6 @@ def score_post(post: dict, query: str) -> float:
     
     # Full phrase match: normalized query phrase is substring of normalized title
     if norm_query in norm_title:
-        #print(f"FULL MATCH! +2 points for {title}")
         score += 2
 
     # Partial word matches
@@ -42,9 +41,10 @@ def score_post(post: dict, query: str) -> float:
         score += 1
 
     # Penalty for extra words in the title (use normalized word count only)
+    """
     extra_words = max(0, len(title_words_norm) - partial_match_count)
-    
-    #score -= extra_words * 0.05  # Subtract 0.05 for each extra word
+    score -= extra_words * 0.05  # Subtract 0.05 for each extra word
+    """
 
     # Small bonus for upvotes and comments
     score += post.get("score", 0) / 5000
@@ -52,7 +52,8 @@ def score_post(post: dict, query: str) -> float:
     return score
 
 
-
+# AI based ranking of posts before displaying to user.
+# Currently deprecated but kept in the codebase just in case the project scope changes in the future.
 def ai_rank_posts(posts, query):
     # Prepare the prompt for ranking
     prompt = f"User query: {query}\n\n"
@@ -65,11 +66,11 @@ def ai_rank_posts(posts, query):
         if post_content:
             formatted_content = format_post_content(post_content)
             post_content = f"Post Content:\n{formatted_content}\n"
-                # Alert the AI if the post contains tables
+            
+             # Alert the AI if the post contains tables
             if "POST CONTAINS TABLE DATA" in formatted_content:
                 post_content = "THIS POST CONTAINS FORMATTED TABLE DATA - PAY SPECIAL ATTENTION\n" + post_content
 
-        #prompt += f"Post {i+1}:\nTitle: {post['title']}\nSummary: {post.get('summary', '')}\nDate: {date_str}\n\n"
         prompt += f"Post {i+1}:\nTitle: {post['title']}\nDate: {date_str}\n{post_content}\n"
         prompt += (
             "You are given a list of posts, each with a title, date, and post content. Your task is to rank all the posts from most to least relevant to the given query."

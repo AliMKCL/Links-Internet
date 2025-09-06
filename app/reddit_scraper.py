@@ -14,11 +14,14 @@ reddit = praw.Reddit(
     user_agent=REDDIT_USER_AGENT
 )
 
+# Scrape Reddit through its official API using PRAW
 def search_reddit(query: str, limit: int = 50, metric: str = "all", subreddit: str = None): 
     results = []
+
     if not subreddit:
         subreddits, cleaned_query = get_relevant_subreddits_from_ai(query, max_subreddits=3)
     else:
+        # If a subreddit name is provided, this only cleans the query and uses the subreddit.
         subreddits, cleaned_query = get_relevant_subreddits_from_ai(query, max_subreddits=3, subreddit=subreddit)
 
 
@@ -31,7 +34,10 @@ def search_reddit(query: str, limit: int = 50, metric: str = "all", subreddit: s
     # First, limit to maximum of 3 subreddits to process
     subreddits = subreddits[:3]
 
+    
     # Map metric to Reddit time_filter
+    # Now not used due to change of scope, still exists in case of future expansion
+    """
     if metric == "all":
         time_filter = "all"
     elif metric == "year":
@@ -40,6 +46,9 @@ def search_reddit(query: str, limit: int = 50, metric: str = "all", subreddit: s
         time_filter = "month"
     else:
         time_filter = "all"  # fallback
+    """
+
+    time_filter = "all"  # Currently always "all" due to narrowed scope
 
     
     # Determine fetch limits based on number of subreddits
@@ -47,28 +56,26 @@ def search_reddit(query: str, limit: int = 50, metric: str = "all", subreddit: s
         # If there's 1 subreddit, fetch 100 posts
         limits = [100]
     elif len(subreddits) == 2:
-        # If there are 2 subreddits, fetch 100 from 1st, 100 from 2nd
-        limits = [100, 100]
+        # If there are 2 subreddits, fetch 100 from 1st, 50 from 2nd
+        limits = [100, 50]
     else:
-        # If there are 3 subreddits, fetch 100 from 1st, 100 from 2nd, 100 from 3rd
-        limits = [100, 100, 100]
+        # If there are 3 subreddits, fetch 100 from 1st, 50 from 2nd, 30 from 3rd
+        limits = [100, 50, 30]
 
-    #print(f"[PRAW] Fetching from {len(subreddits)} subreddits: {subreddits}")
-    #print(f"[PRAW] Using fetch limits: {limits}")
 
     # Loop over each subreddit and fetch a different number of posts per subreddit
     for idx, subreddit in enumerate(subreddits):
         fetch_limit = limits[idx]
-        #print(f"[PRAW] Subreddit {idx+1}/{len(subreddits)}: r/{subreddit} - fetching up to {fetch_limit} posts")
+
         try:
             for submission in reddit.subreddit(subreddit).search(query, sort="relevance", time_filter=time_filter, limit=fetch_limit):
-                # Skip video posts
                 
+                # Skip video posts (they were littering the data with no useful content)
                 if submission.is_video:
                     continue
                 
-                submission.comments.replace_more(limit=0)
-                top_comments = [c.body for c in submission.comments[:3]]
+                submission.comments.replace_more(limit=0) # Blocks processing addtional comments (comments to comments)
+                top_comments = [c.body for c in submission.comments[:3]]    # Store the top 3 comments as a list
                 results.append({
                     "title": submission.title,
                     "url": f"https://www.reddit.com{submission.permalink}",

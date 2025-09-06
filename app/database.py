@@ -1,24 +1,23 @@
 import chromadb
 import chromadb.utils.embedding_functions as embedding_functions
-import openai
 
 
 from app.config import OPENAI_KEY_DB
 
-chroma_client = chromadb.PersistentClient("app/data/posts_db")  # Use new database name
+# Create the persistent collection object "chroma_client"
+chroma_client = chromadb.PersistentClient("app/data/posts_db")  
 
+# Define the embedding function using OpenAI's embedding model
 openai_ef = embedding_functions.OpenAIEmbeddingFunction(
                 api_key=OPENAI_KEY_DB,
                 model_name="text-embedding-3-small"
             )
 
+# Create the collection using the object
 collection = chroma_client.get_or_create_collection(name="posts", embedding_function=openai_ef)
 
-# Delete existing collection to start fresh
+# Delete existing collection to start fresh (For refreshing during testing purposes)
 def delete_collection():
-        
-        # Note: This will remove all existing data in the collection
-        # Use with caution in production environments
     try:
         chroma_client.delete_collection(name="posts")
         print("Deleted existing collection to start fresh with enhanced embedding")
@@ -26,11 +25,11 @@ def delete_collection():
         print("Could not delete the collection:", e)
 
 
-
+# Embed posts into the database
 def embed_text(posts: list[dict]) -> None:
     for post in posts:
         try:
-            # Check if post already exists
+            # Check if post already exists based on url (unique identifier)
             existing = collection.query(
                 query_texts=["dummy"],
                 n_results=1,
@@ -62,9 +61,10 @@ def embed_text(posts: list[dict]) -> None:
                     game_metadata = game_mappings[subreddit][0]  # Use the abbreviation as game metadata
                 
                 # Add abbreviation of game to title if it's from a game-related subreddit and doesn't already contain it
+                # Example: query: "best weapon in botw", title: "best weapon", enhanced title: "best weapon BOTW"
                 title_for_embedding = original_title
                 if subreddit in game_mappings:
-                    abbreviation_full = game_mappings[subreddit][1][1]
+                    #abbreviation_full = game_mappings[subreddit][1][1]
                     abbreviation, terms_to_check = game_mappings[subreddit]
                     # Check if any of the terms are already in the title (case insensitive)
                     if not any(term in original_title.lower() for term in terms_to_check):
@@ -73,7 +73,7 @@ def embed_text(posts: list[dict]) -> None:
 
                 content = post.get("content", "")
                 if content and len(content) > 1000:
-                    content = content[:1000]  # Truncate to first 1000 chars
+                    content = content[:1000]  # Truncate to first 1000 chars if post content is too long.
                 post["content"] = content
                 
                 # Convert comments list to string for ChromaDB compatibility
@@ -81,8 +81,8 @@ def embed_text(posts: list[dict]) -> None:
                 comments_str = " | ".join(comments) if comments else ""  # Join comments with separator
                 
                 collection.add(
-                    documents=[title_for_embedding],  # Use enhanced title for embedding
-                    ids=[post["url"]],  # Use URL as unique ID
+                    documents=[title_for_embedding],    # Use enhanced title for embedding
+                    ids=[post["url"]],                  # Use URL as unique ID
                     embeddings=[openai_ef([title_for_embedding])[0]],
                     metadatas=[{
                         "url": post["url"],                             # url of post
@@ -99,7 +99,9 @@ def embed_text(posts: list[dict]) -> None:
         except Exception as e:
             print(f"Error embedding post {post.get('title', 'unknown')}: {e}")
 
+# Query the database for retrieving similar posts to the query
 def query_db(query: str, n_results: int = 10, game_filter: str = None):
+
     # Normalize query so that mentions of full game names are converted / augmented with
     # the same abbreviations used when embedding titles (ensures better vector matches).
     query_lower = query.lower()
@@ -109,6 +111,7 @@ def query_db(query: str, n_results: int = 10, game_filter: str = None):
     }
 
     # Build a query string for embedding that includes the abbreviation if a game term is present
+    # Enhances the query to improve matching (since post titles are stored with added abbreviations)
     query_for_embedding = query
     for abbrev, aliases in game_aliases.items():
         for alias in aliases:
@@ -118,15 +121,17 @@ def query_db(query: str, n_results: int = 10, game_filter: str = None):
                     query_for_embedding = f"{query_for_embedding} {abbrev.upper()}"
                     print(f"Augmented query for embedding with game abbrev: {abbrev.upper()}")
                 break
-
+    
+    # Embed the query for database search
     query_embeddings = openai_ef(query_for_embedding)
 
-    # Build where clause for game filtering
+    # Build where clause for filtering searches by game (BOTW or TOTK)
     where_clause = None
     if game_filter:
         where_clause = {"game": game_filter}
         print(f"Filtering results for game: {game_filter}")
 
+    # Query the database for results
     results = collection.query(
         query_embeddings=query_embeddings,
         n_results=n_results,
