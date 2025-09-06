@@ -206,10 +206,6 @@ Recommended platforms for free/low-cost deployment:
 4. Test with `make dev`
 5. Submit a pull request
 
-## License
-
-[Add your license here]
-
 ## Acknowledgments
 
 - Built for Zelda gaming community
