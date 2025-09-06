@@ -1,3 +1,37 @@
+# Environment / secrets
 .env
+*.env
+.env.*
 
-reddit_advisor/lib/python3.12/site-packages/
+# Python caches
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+env/
+reddit_advisor/
+
+# Logs
+*.log
+
+# OS / Editor
+.DS_Store
+.vscode/
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+
+# Dependency / pip caches
+pip-wheel-metadata/
+.cache/
+
+# Temporary files
+*.tmp
+*.swp
+

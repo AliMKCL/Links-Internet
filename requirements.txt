@@ -1,9 +1,37 @@
-fastapi>=0.95.0
-uvicorn>=0.21.1
-praw>=7.7.0
-openai>=1.3.0
-jinja2>=3.1.2
-ddgs>=0.3.0
-httpx>=0.24.0
-python-dotenv>=1.0.0
-lxml>=4.9.2
+# Production / deployment requirements for the Zelda Reddit Advisor app
+
+# --- Core API stack ---
+fastapi~=0.110.0        # FastAPI framework
+uvicorn[standard]~=0.29.0  # ASGI server (standard extras: uvloop, httptools)
+
+# --- HTML templating ---
+jinja2~=3.1.0           # Template rendering
+
+# --- Environment / config ---
+python-dotenv~=1.0.0    # Load .env for API keys
+
+# --- Reddit + Search ---
+praw~=7.7.0             # Reddit API wrapper
+ddgs~=1.0.0             # DuckDuckGo search (post id discovery)
+
+# --- Embeddings / Vector DB ---
+openai>=1.30.0,<2.0.0   # OpenAI SDK (embeddings + chat). 1.30+ supports text-embedding-3-small
+chromadb~=0.5.0         # Local persistent vector store (Chroma)
+
+# --- NLP / Optional heavier ML ---
+transformers~=4.38.0    # Used for question vs statement classification
+torch~=2.2.0            # Backend for transformers pipeline (CPU). If deployment size is a concern you can remove both torch + transformers and stub that feature.
+
+# --- Parsing / Performance ---
+lxml~=4.9.0             # HTML parsing (used indirectly by ddgs)
+orjson~=3.9.0           # Faster JSON (FastAPI can leverage if installed)
+
+# --- Typing / Validation (pulled transitively but pinned for determinism) ---
+pydantic~=2.6.0
+typing-extensions~=4.10.0
+
+# --- Notes ---
+# 1. To slim the image for a tiny VM (e.g., free-tier EC2) you may comment out transformers + torch if the classification feature is non-essential.
+# 2. If removing torch/transformers, also remove the related import and code path in utilities.py (question_statement_classification).
+# 3. Do not downgrade openai below 1.30.0; earlier versions may lack current model endpoints.
+# 4. ChromaDB pulls additional dependencies (e.g., sqlite libs); keep the layer cached in Docker for faster deploys.
