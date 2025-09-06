@@ -27,7 +27,7 @@ cached_query = ""
 
 # Production flag: set to True to disable fetching new posts
 # Purpose: Disable embedding new posts into the database in production (This project is just for demonstration purposes, so the database is prefilled and does not need to be updated)
-DISABLE_FETCHING = True
+DISABLE_FETCHING = False
 
 # Root endpoint to serve the HTML template
 @app.get("/", response_class=HTMLResponse)
