@@ -25,6 +25,10 @@ templates = Jinja2Templates(directory="app/templates")
 cached_posts = []
 cached_query = ""
 
+# Production flag: set to True to disable fetching new posts
+# Purpose: Disable embedding new posts into the database in production (This project is just for demonstration purposes, so the database is prefilled and does not need to be updated)
+DISABLE_FETCHING = True
+
 # Root endpoint to serve the HTML template
 @app.get("/", response_class=HTMLResponse)
 def root(request: Request):
@@ -117,6 +121,17 @@ def query(q: str = Query(..., max_length=512, description="3D Zelda related ques
                 all_posts.append(post)
             
             database_message = "Found in the database"
+            
+        # If no relevant posts are found in the db, check if fetching is disabled
+        elif DISABLE_FETCHING:
+            print("Fetching disabled for production")
+            return {
+                "query": q,
+                "results": [],
+                "has_summary": False,
+                "database_status": "No results found",
+                "error": "This version does not allow fetching new posts, please try one of the provided queries."
+            }
             
         # If no relevant posts are found in the db, fetch new ones.
         else:
@@ -215,6 +230,17 @@ def query(q: str = Query(..., max_length=512, description="3D Zelda related ques
     # Duplicate code and logic with the else statement above, could be functionized to be more efficient
     except Exception as e:
         print(f"Error querying database: {e}")
+        
+        # If fetching is disabled, return error instead of trying to fetch
+        if DISABLE_FETCHING:
+            return {
+                "query": q,
+                "results": [],
+                "has_summary": False,
+                "database_status": "Database error",
+                "error": "This version does not allow fetching new posts, please try one of the provided queries."
+            }
+        
         database_message = "Database query failed, fetching new posts"
         
         results = {}
@@ -449,7 +475,10 @@ def check_fetch_needed(q: str = Query(..., max_length=512, description="Query to
         
         # If we don't have enough good matches, fetching will be needed
         if not good_matches or len(good_matches) < 7:
-            return {"fetch_needed": True, "message": "Will need to fetch new posts"}
+            if DISABLE_FETCHING:
+                return {"fetch_needed": False, "message": "Fetching disabled in production"}
+            else:
+                return {"fetch_needed": True, "message": "Will need to fetch new posts"}
         else:
             return {"fetch_needed": False, "message": "Posts available in database"}
             
