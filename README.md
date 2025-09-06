@@ -1,4 +1,11 @@
-Links Internet — A FastAPI-based web app that scrapes Reddit and web results, stores them in a vector database (Chroma), and uses OpenAI embeddings for ranking and retrieval-augmented search.
+Links Internet: 
+- A FastAPI-based web app that scrapes Reddit and web results, stores them in a vector database (Chroma), and uses OpenAI embeddings for retrieval-augmented search.
+- Expected reply times:
+   - Retrieval:2-3 seconds for the relevant posts (if they exist inside the database), 20-40 seconds for the summary of all posts
+   - Fetching: Depends on the query
+
+# Video link: 
+https://youtu.be/gH4BUbcch-8
 
 # Features:
 - Reddit API + DuckDuckGo Search scraping
@@ -12,9 +19,6 @@ Links Internet — A FastAPI-based web app that scrapes Reddit and web results, 
 - Data: PRAW (Reddit API), DuckDuckGo Search, ChromaDB
 - ML/RAG: OpenAI embeddings for semantic ranking
 - Frontend: HTML/CSS (Jinja templates)
-
-# Video link: 
-https://youtu.be/gH4BUbcch-8
 
 # Notes
 1) Currently runs locally only, diployment via docker/ec2 is planned.
