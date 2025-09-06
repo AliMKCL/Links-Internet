@@ -1,5 +1,6 @@
 # Production / deployment requirements for the Zelda Reddit Advisor app
 
+
 # --- Core API stack ---
 fastapi~=0.110.0        # FastAPI framework
 uvicorn[standard]~=0.29.0  # ASGI server (standard extras: uvloop, httptools)
@@ -12,7 +13,8 @@ python-dotenv~=1.0.0    # Load .env for API keys
 
 # --- Reddit + Search ---
 praw~=7.7.0             # Reddit API wrapper
-ddgs~=1.0.0             # DuckDuckGo search (post id discovery)
+# ddgs import comes from the duckduckgo-search project; current releases are 9.x (no 1.x line exists)
+ddgs>=9.5.0,<10.0       # DuckDuckGo search (post id discovery)
 
 # --- Embeddings / Vector DB ---
 openai>=1.30.0,<2.0.0   # OpenAI SDK (embeddings + chat). 1.30+ supports text-embedding-3-small
