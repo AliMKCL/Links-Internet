@@ -1,6 +1,6 @@
 import re
 import html
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
+#from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
 from openai import OpenAI
 
 from app.config import OPENAI_KEY
@@ -160,7 +160,13 @@ def enhance_post_content_for_html(content) -> str:
 
 # Classifies the query as a question or statement using a pre-trained model
 def question_statement_classification(query: str) -> int:
-    
+
+    # The libraries torch and transformers are quite large, so this function is currently disabled to keep the app lightweight.
+    # If you want to enable it, make sure to add the required libraries to requirements.txt and uncomment the code below.
+    # torch: version 2.2.2
+    # transformers: 4.54.1
+
+    """
     tokenizer = AutoTokenizer.from_pretrained("shahrukhx01/question-vs-statement-classifier")
     model = AutoModelForSequenceClassification.from_pretrained("shahrukhx01/question-vs-statement-classifier")
 
@@ -178,6 +184,8 @@ def question_statement_classification(query: str) -> int:
     else:
         print("Query classified as a statement.")
         return 0  # Statement
+    """
+    return -1
 
 # Convert Markdown text to HTML
 def markdown_to_html(text) -> str:

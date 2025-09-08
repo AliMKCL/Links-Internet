@@ -20,9 +20,9 @@ ddgs>=9.5.0,<10.0       # DuckDuckGo search (post id discovery)
 openai>=1.30.0,<2.0.0   # OpenAI SDK (embeddings + chat)
 chromadb~=0.5.0         # Local persistent vector store (Chroma)
 
-# --- NLP / Optional heavier ML ---
-transformers~=4.38.0    # Used for question vs statement classification
-torch~=2.2.0            # Backend for transformers pipeline (CPU)
+# --- NLP / Optional heavier ML --- (REMOVED to keep the application lightweight)
+#transformers~=4.38.0    # Used for question vs statement classification
+#torch~=2.2.0            # Backend for transformers pipeline (CPU)
 
 # --- Parsing / Performance ---
 # lxml pin removed; ddgs 9.5.x requires lxml>=5.3 / >=6.0 on newer patch versions.
