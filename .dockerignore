@@ -1,0 +1,62 @@
+# Git and version control
+.git
+.gitignore
+
+# Environment files (users must provide their own)
+.env
+.env.local
+.env.*.local
+
+# Virtual environments
+venv/
+reddit_advisor/
+env/
+ENV/
+
+# Python cache and build files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Docker files (users don't need these in the container)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Test files
+test_*.py
+*_test.py
+tests/
+
+# Documentation (users can read from repo)
+README.md
+*.md
