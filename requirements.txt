@@ -2,23 +2,25 @@
 
 
 # --- Core API stack ---
-fastapi~=0.110.0        # FastAPI framework
-uvicorn[standard]~=0.29.0  # ASGI server (standard extras: uvloop, httptools)
+fastapi==0.116.1        # FastAPI framework
+uvicorn[standard]==0.35.0  # ASGI server (standard extras: uvloop, httptools)
 
 # --- HTML templating ---
-jinja2~=3.1.0           # Template rendering
+jinja2==3.1.6           # Template rendering
 
 # --- Environment / config ---
-python-dotenv~=1.0.0    # Load .env for API keys
+python-dotenv==1.1.1    # Load .env for API keys
 
 # --- Reddit + Search ---
-praw~=7.7.0             # Reddit API wrapper
+praw==7.8.1             # Reddit API wrapper
 # ddgs import comes from the duckduckgo-search project; current releases are 9.x
-ddgs>=9.5.0,<10.0       # DuckDuckGo search (post id discovery)
+ddgs==9.4.3      # DuckDuckGo search (post id discovery)
 
 # --- Embeddings / Vector DB ---
-openai>=1.30.0,<2.0.0   # OpenAI SDK (embeddings + chat)
-chromadb~=0.5.0         # Local persistent vector store (Chroma)
+openai==1.98.0   # OpenAI SDK (embeddings + chat)
+chromadb==1.0.20        # Local persistent vector store (Chroma)
+
+httpx==0.28.1
 
 # --- NLP / Optional heavier ML --- (REMOVED to keep the application lightweight)
 #transformers~=4.38.0    # Used for question vs statement classification
@@ -27,12 +29,12 @@ chromadb~=0.5.0         # Local persistent vector store (Chroma)
 # --- Parsing / Performance ---
 # lxml pin removed; ddgs 9.5.x requires lxml>=5.3 / >=6.0 on newer patch versions.
 # Allow resolver to pick a compatible recent lxml. Optionally cap major: <7 if you want to avoid future breaking changes.
-lxml>=6.0.0,<7.0.0
-orjson~=3.9.0           # Faster JSON (FastAPI can leverage if installed)
+lxml==6.0.0
+orjson==3.11.3           # Faster JSON (FastAPI can leverage if installed)
 
 # --- Typing / Validation ---
-pydantic~=2.6.0
-typing-extensions~=4.10.0
+pydantic==2.11.7
+typing-extensions==4.14.1
 
 # --- Notes ---
 # If minimizing size, remove transformers + torch and related code.

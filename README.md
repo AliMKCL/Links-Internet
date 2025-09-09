@@ -21,7 +21,7 @@ A FastAPI-based intelligent advisor for Breath of the Wild (BOTW) and Tears of t
 
 # Deployment
 
-This project is designed to run via Docker for the best experience. Follow these steps after cloning the repository:
+This project is available as a pre-built Docker image. No repository cloning required.
 
 ## Prerequisites
 
@@ -36,20 +36,20 @@ You'll need to obtain your own API keys:
   - Create an app at: https://www.reddit.com/prefs/apps
   - Note: App works with existing database if you skip this
 
-Once you obtain these, replace them in the .env_example file, then rename the file to .env.
-
 **Steps:**
-### Step 1: Copy template to actual .env file
-cp .env.example .env
+### Step 1: Pull the Docker image
+docker pull alimkcl/zelda-advisor:latest
 
-### Step 2: Edit .env with real values
-nano .env  # or code .env, vim .env, etc.
+### Step 2: Copy environment template from container to your directory
+docker run --rm alimkcl/zelda-advisor:latest cat /app/.env.example > .env
 
-### Step 3: Build the container
-docker build -t zelda-advisor .
+### Step 3: Edit local.env with your API key
+nano .env 
 
 ### Step 4: Run container
-docker run --env-file .env -p 8000:8000 zelda-advisor
+docker run --rm --env-file .env -p 8000:8000 alimkcl/zelda-advisor:latest
 
 ### Step 5: Access application
-Access the application: Open http://localhost:8000 in your browser
+Open http://localhost:8000 in your browser
+
+
