@@ -36,14 +36,14 @@ You'll need to obtain your own API keys:
   - Create an app at: https://www.reddit.com/prefs/apps
   - Note: App works with existing database if you skip this
 
-**Steps:**
+# Steps:
 ### Step 1: Pull the Docker image
 docker pull alimkcl/zelda-advisor:latest
 
 ### Step 2: Copy environment template from container to your directory
 docker run --rm alimkcl/zelda-advisor:latest cat /app/.env.example > .env
 
-### Step 3: Edit local.env with your API key
+### Step 3: Edit local.env with your API keys
 nano .env 
 
 ### Step 4: Run container
